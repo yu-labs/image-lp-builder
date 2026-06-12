@@ -1,0 +1,87 @@
+{
+  "name": "image-lp-builder",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Open-source image-based landing page builder for Cloudflare Workers",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yu-labs/image-lp-builder.git"
+  },
+  "cloudflare": {
+    "bindings": {
+      "RATE_LIMIT": {
+        "description": "Required Astro session, temporary lock, and rate-limit storage. Leave the default value and let Cloudflare create one KV namespace."
+      },
+      "DB": {
+        "description": "Required app database. Leave the default value and let Cloudflare create a new D1 database."
+      },
+      "BUCKET": {
+        "description": "Required uploaded-image storage. Leave the default value and let Cloudflare create a new R2 bucket."
+      },
+      "OAUTH_RELAY_URL": {
+        "description": "Required admin login relay URL. Use the default `https://auth.yulab.me`."
+      }
+    }
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "generate-types": "wrangler types --env-file .env.example",
+    "deploy": "astro build && wrangler deploy",
+    "prepare:public-release": "node scripts/prepare-public-release.mjs",
+    "test:section-duplicate": "node scripts/section-duplicate-contract-audit.mjs",
+    "test:improvement-draft": "node scripts/improvement-draft-contract-audit.mjs",
+    "test:migrations": "node scripts/migration-roundtrip.mjs",
+    "test:public-snapshot": "node scripts/public-snapshot-audit.mjs"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.2.2",
+    "@astrojs/react": "^5.0.4",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@fortawesome/free-brands-svg-icons": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@fortawesome/react-fontawesome": "^3.3.1",
+    "@tailwindcss/vite": "^4.2.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^6.1.10",
+    "browser-image-compression": "^2.0.2",
+    "jszip": "^3.10.1",
+    "lucide-react": "^1.16.0",
+    "modern-normalize": "^3.0.1",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-rnd": "^10.5.3",
+    "tailwindcss": "^4.2.4",
+    "wrangler": "^4.86.0",
+    "xss": "^1.0.15"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "^7",
+      "ws": "^8.20.1",
+      "yaml": "^2.8.3"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
+  },
+  "packageManager": "pnpm@10.4.0",
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@types/node": "^22.12.0",
+    "esbuild": "^0.27.7",
+    "typescript": "^5.9.3"
+  }
+}

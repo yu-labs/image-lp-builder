@@ -1,0 +1,106 @@
+---
+/**
+ * /admin/lps/new
+ *
+ * Form for creating a new LP. The self-hoster picks the slug here
+ * (the URL path under which the LP will be served), and on submit
+ * we POST to /api/lps and redirect to the new LP's edit screen.
+ */
+
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import NewLpForm from '../../../components/admin/NewLpForm';
+
+export const prerender = false;
+---
+
+<AdminLayout title="新規LP">
+  <div class="new-lp-page mx-auto max-w-2xl">
+    <a
+      href="/admin"
+      class="back-link"
+    >
+      ← LP一覧に戻る
+    </a>
+
+    <header class="page-header">
+      <h1>新規LPを作成</h1>
+      <p class="page-description">
+        LP名だけで作成できます。URLは空欄なら自動で作成されます。
+      </p>
+    </header>
+
+    <div class="form-card">
+      <NewLpForm client:load />
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .new-lp-page {
+    --admin-ink: #3f4352;
+    --admin-muted: #8b91a1;
+  }
+
+  .back-link {
+    align-items: center;
+    color: #8b91a1;
+    display: inline-flex;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    transition: color 0.15s ease;
+  }
+
+  .back-link:hover {
+    color: #567baf;
+  }
+
+  .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header h1 {
+    color: var(--admin-ink);
+    font-size: 1.9rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .page-description {
+    color: var(--admin-muted);
+    font-size: 0.98rem;
+    line-height: 1.55;
+    margin: 0.65rem 0 0;
+  }
+
+  .form-card {
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 1rem;
+    box-shadow: 0 16px 38px rgba(31, 34, 48, 0.06);
+    padding: 1.15rem;
+  }
+
+  @media (max-width: 768px) {
+    .back-link {
+      margin-bottom: 1rem;
+    }
+
+    .page-header {
+      margin-bottom: 1.25rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.45rem;
+    }
+
+    .page-description {
+      font-size: 0.88rem;
+    }
+
+    .form-card {
+      padding: 0.9rem;
+    }
+  }
+</style>

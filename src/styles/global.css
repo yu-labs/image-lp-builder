@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* CTA loop animations.
+ *
+ * Easing strategy (refs: Josh W. Comeau on springs/bounces, animate.css):
+ * - Spring overshoot: cubic-bezier(0.34, 1.56, 0.64, 1)  ← natural pop
+ * - Strong elastic:   cubic-bezier(0.68, -0.6, 0.32, 1.6)
+ * - Gravity (fall):   cubic-bezier(0.755, 0.05, 0.855, 0.06)
+ * - Soft snap (rise): cubic-bezier(0.215, 0.61, 0.355, 1)
+ *
+ * Each loop has a tight "hit" phase up front, then a long rest tail
+ * so the same animation isn't bombarding the visitor non-stop. Shared
+ * by the editor preview and public LP so WYSIWYG. */
+
+@keyframes cta-anim-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes cta-anim-shake {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  12%  { transform: translate3d(-7px, 0, 0) rotate(-1.35deg); }
+  24%  { transform: translate3d(7px, 0, 0) rotate(1.35deg); }
+  36%  { transform: translate3d(-5px, 0, 0) rotate(-1deg); }
+  48%  { transform: translate3d(4px, 0, 0) rotate(0.8deg); }
+  60%  { transform: translate3d(-2px, 0, 0) rotate(-0.45deg); }
+  74%  { transform: translate3d(1px, 0, 0) rotate(0.2deg); }
+}
+
+@keyframes cta-anim-bounce {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+  12% {
+    transform: translate3d(0, 0, 0) scaleY(0.94);
+  }
+  34% {
+    transform: translate3d(0, -28px, 0) scaleY(1.04);
+  }
+  54% {
+    transform: translate3d(0, 0, 0) scaleY(0.965);
+  }
+  72% {
+    transform: translate3d(0, -9px, 0) scaleY(1.015);
+  }
+  86% {
+    transform: translate3d(0, -2px, 0) scaleY(1.004);
+  }
+  96% {
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+}
+
+@keyframes cta-anim-glow {
+  0%, 60%, 100% {
+    box-shadow:
+      0 0 0 rgba(255, 255, 255, 0),
+      0 0 0 rgba(255, 255, 255, 0);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  20% {
+    box-shadow:
+      0 0 0 4px rgba(255, 255, 255, 0.45),
+      0 0 26px 6px rgba(255, 255, 255, 0.65);
+  }
+  35% {
+    box-shadow:
+      0 0 0 8px rgba(255, 255, 255, 0.15),
+      0 0 36px 10px rgba(255, 255, 255, 0.4);
+  }
+}
+
+@keyframes cta-anim-shine {
+  0% {
+    transform: translateX(-135%) skewX(-18deg);
+  }
+  42%, 100% {
+    transform: translateX(135%) skewX(-18deg);
+  }
+}
+
+.cta-anim-pulse  { animation: cta-anim-pulse  1.15s ease-in-out infinite; }
+.cta-anim-shake  { animation: cta-anim-shake  1.25s ease-in-out infinite; }
+.cta-anim-bounce { animation: cta-anim-bounce 1.35s ease-in-out infinite; }
+.cta-anim-glow   { animation: cta-anim-glow   2.6s infinite; }
+.cta-anim-fade {
+  overflow: hidden;
+}
+.cta-anim-fade::after {
+  content: "";
+  position: absolute;
+  inset: -35% -20%;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(255, 255, 255, 0.14) 46%,
+    rgba(255, 255, 255, 0.72) 50%,
+    rgba(255, 255, 255, 0.14) 54%,
+    transparent 62%,
+    transparent 100%
+  );
+  transform: translateX(-135%) skewX(-18deg);
+  animation: cta-anim-shine 1.9s ease-in-out infinite;
+}
+
+@keyframes admin-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes admin-modal-panel-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.admin-modal-backdrop {
+  animation: admin-modal-backdrop-in 170ms ease-out both;
+}
+
+.admin-modal-panel {
+  animation: admin-modal-panel-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center;
+  will-change: opacity;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-anim-pulse,
+  .cta-anim-shake,
+  .cta-anim-bounce,
+  .cta-anim-glow,
+  .cta-anim-fade,
+  .admin-modal-backdrop,
+  .admin-modal-panel {
+    animation: none;
+  }
+  .cta-anim-fade::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Prevent iOS Safari from auto-zooming when a focused input/textarea
+   has a font-size under 16px. Apply on mobile only so the desktop
+   admin form styles (text-sm = 14px) stay untouched. !important is
+   needed to win over Tailwind utility classes like text-xs / text-sm
+   that ship on most of the admin inputs. */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

@@ -1,0 +1,255 @@
+---
+/**
+ * /admin/cta-preview
+ *
+ * Standalone preview page for new CTA button styles. Mounted in the
+ * admin tree so login + middleware still gate it; not linked from
+ * navigation yet. Used to iterate on visual designs before committing
+ * to a schema change in the production CTA system.
+ */
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+export const prerender = false;
+---
+
+<AdminLayout title="CTA ボタン プレビュー">
+  <div class="max-w-3xl mx-auto space-y-8">
+    <header>
+      <h1 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">CTAボタン プレビュー</h1>
+      <p class="text-sm text-gray-600 leading-normal">
+        新しいCTAスタイルを本番システムに入れる前に見た目だけ確認するページ。<br />
+        まずはLINE登録用の1個から、色を変えながら詰める。
+      </p>
+    </header>
+
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+      <h2 class="text-base font-semibold text-gray-900">1. LINE登録</h2>
+
+      <div class="flex justify-center">
+        <a href="#" class="cta-sample cta-sample-line">
+          <span class="cta-sample-label">LINE登録する</span>
+          <span class="cta-sample-arrow" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14" />
+              <path d="M13 5l7 7-7 7" />
+            </svg>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+      <h2 class="text-base font-semibold text-gray-900">2. 電話</h2>
+
+      <div class="flex justify-center">
+        <a href="tel:0120123456" class="cta-sample cta-sample-phone">
+          <span class="cta-sample-icon-left" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.23 15.26l-2.54-.29c-.61-.07-1.21.14-1.64.57l-1.84 1.84c-2.83-1.44-5.15-3.75-6.59-6.59l1.85-1.85c.43-.43.64-1.03.57-1.64l-.29-2.52c-.12-1.01-.97-1.77-1.99-1.77H5.03c-1.13 0-2.07.94-2 2.07.53 8.54 7.36 15.36 15.89 15.89 1.13.07 2.07-.87 2.07-2v-1.73c.01-1.01-.75-1.86-1.76-1.98z" />
+            </svg>
+          </span>
+          <span class="cta-sample-stack">
+            <span class="cta-sample-line1">お電話はこちら</span>
+            <span class="cta-sample-line2">0120-12-3456</span>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+      <h2 class="text-base font-semibold text-gray-900">3. メール</h2>
+
+      <div class="flex justify-center">
+        <a href="mailto:info@example.com" class="cta-sample cta-sample-mail">
+          <span class="cta-sample-icon-left" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+            </svg>
+          </span>
+          <span class="cta-sample-label">メールで問い合わせる</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+      <h2 class="text-base font-semibold text-gray-900">4. 申込</h2>
+
+      <div class="flex justify-center">
+        <a href="#" class="cta-sample cta-sample-gradient">
+          <span class="cta-sample-icon-left" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
+          <span class="cta-sample-label">無料セミナーに申し込む</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+      <h2 class="text-base font-semibold text-gray-900">5. 詳細</h2>
+
+      <div class="flex justify-center">
+        <a href="#" class="cta-sample cta-sample-flat">
+          <span class="cta-sample-label">詳しく見る</span>
+        </a>
+      </div>
+    </section>
+  </div>
+</AdminLayout>
+
+<style>
+  /* Sample CTA — fresh classes (cta-sample / cta-sample-*) so we don't
+     collide with anything the production renderer outputs. */
+  .cta-sample {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 480px;
+    padding: 1.875rem 3rem 1.875rem 1.5rem;
+    border-radius: 0.625rem;
+    font-weight: 700;
+    font-size: 1.125rem;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* LINE flavour — green gradient, white text, white arrow chip. */
+  .cta-sample-line {
+    color: #ffffff;
+    background: linear-gradient(0deg, #0fa848 50%, #17be60 100%);
+    border: 1px solid #0a9540;
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.6),
+      0 5px 10px rgba(0, 0, 0, 0.15);
+    font-size: 1.5rem;
+  }
+
+  .cta-sample-label {
+    display: inline-block;
+  }
+
+  .cta-sample-arrow {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    background: #ffffff;
+    color: #0fa848;
+  }
+
+  .cta-sample-arrow svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Phone flavour — orange gradient, white text, left phone icon,
+     pill shape. Inherits the LINE-style depth (inset highlight + drop
+     shadow) so the family feels consistent. */
+  .cta-sample-phone {
+    color: #ffffff;
+    background: linear-gradient(0deg, #ee4e1e 50%, #ff7043 100%);
+    border: 1px solid #dc4516;
+    border-radius: 100vh;
+    /* Symmetric padding so the stacked text stays visually centred
+       even though the icon is absolutely positioned on the left. */
+    padding: 1.875rem 3.5rem;
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.5),
+      0 5px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .cta-sample-icon-left {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .cta-sample-icon-left svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .cta-sample-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    line-height: 1.3;
+  }
+
+  .cta-sample-line1 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .cta-sample-line2 {
+    font-size: 1.625rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  /* Mail flavour — solid blue with a heavy bottom border for that
+     "press-down" depth, plus a single drop shadow underneath. Left
+     mail icon, no arrow chip. */
+  .cta-sample-mail {
+    color: #ffffff;
+    background-color: #1e88e5;
+    border: 1px solid #1976d2;
+    border-bottom: 5px solid #0d47a1;
+    border-radius: 0.625rem;
+    /* bottom padding shrinks by 5px to absorb the thick bottom border,
+       so overall height stays in line with the other templates. */
+    padding: 1.875rem 3.5rem 1.5625rem 3.5rem;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.25);
+    font-size: 1.375rem;
+  }
+
+  /* Horizontal-gradient flavour — purple → pink left-to-right with a
+     white outline frame, square corners. The white border is what
+     gives this template its identity vs. the rounded ones. */
+  .cta-sample-gradient {
+    color: #ffffff;
+    background-image: linear-gradient(to right, #7e3ff2 0%, #ec38bc 100%);
+    border: 2px solid #ffffff;
+    border-radius: 0;
+    /* Symmetric horizontal padding so the label stays centred even
+       with the absolutely-positioned left icon. Vertical padding
+       absorbs the 2px outline so the visual height matches the
+       1.875rem-padded templates. */
+    padding: 1.75rem 3.5rem;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+    font-size: 1.25rem;
+  }
+
+  /* Flat / minimal flavour — solid dark fill, no shadow, no border,
+     simple rounded corners. Pairs well with text-heavy LPs where the
+     button should be assertive but not screaming. */
+  .cta-sample-flat {
+    color: #ffffff;
+    background-color: #334155;
+    border: 1px solid #334155;
+    border-radius: 0.625rem;
+    padding: 1.875rem 1.5rem;
+    font-size: 1.375rem;
+  }
+</style>

@@ -1,0 +1,93 @@
+---
+/**
+ * /admin/members
+ *
+ * Workspace admin roster. Add by email, remove by row, list shows
+ * sign-in status. Self-row hides the remove button (server also
+ * blocks self-delete).
+ */
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminMembersPanel from '../../components/admin/AdminMembersPanel.tsx';
+
+export const prerender = false;
+
+const user = Astro.locals.user;
+if (!user) {
+  // Defensive: middleware should have redirected to /admin/login.
+  return Astro.redirect('/admin/login', 302);
+}
+---
+
+<AdminLayout title="メンバー管理">
+  <div class="members-page">
+    <header class="page-header">
+      <h1>メンバー管理</h1>
+      <p class="page-description">管理画面に入れるGoogleアカウントを追加・削除します。</p>
+      <div class="member-notice">
+        追加されたメンバーは、LP作成・公開・削除、サイト設定、メンバー追加まで操作できます。
+      </div>
+    </header>
+    <AdminMembersPanel client:load currentAdminId={user.id} />
+  </div>
+</AdminLayout>
+
+<style>
+  .members-page {
+    --admin-ink: #3f4352;
+    --admin-muted: #8b91a1;
+    margin: 0 auto;
+    max-width: 56rem;
+  }
+
+  .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header h1 {
+    color: var(--admin-ink);
+    font-size: 1.9rem;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .page-description {
+    color: var(--admin-muted);
+    font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.55;
+    margin: 0.55rem 0 0;
+  }
+
+  .member-notice {
+    background: #fff6f3;
+    border: 1px solid #ffd6cc;
+    border-radius: 1rem;
+    box-shadow: 0 14px 34px rgba(159, 47, 47, 0.08);
+    color: #8a4a3c;
+    font-size: 0.84rem;
+    font-weight: 700;
+    line-height: 1.55;
+    margin-top: 0.85rem;
+    padding: 0.85rem 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      margin-bottom: 1.25rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.45rem;
+    }
+
+    .page-description {
+      font-size: 0.88rem;
+    }
+
+    .member-notice {
+      font-size: 0.82rem;
+      padding: 0.9rem;
+    }
+  }
+</style>

@@ -1,0 +1,61 @@
+---
+export const prerender = false;
+
+Astro.response.status = 410;
+Astro.response.headers.set('Content-Type', 'text/html; charset=utf-8');
+---
+
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>掲載終了しました</title>
+</head>
+<body>
+  <main>
+    <h1>掲載終了しました</h1>
+    <p>このページの公開は終了しています。</p>
+  </main>
+</body>
+</html>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background: #f5f7fa;
+    color: #1f2937;
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN',
+      'Noto Sans JP', sans-serif;
+    line-height: 1.7;
+  }
+
+  main {
+    width: min(100%, 420px);
+    text-align: center;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  p {
+    margin: 0.85rem 0 0;
+    color: #596173;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+</style>

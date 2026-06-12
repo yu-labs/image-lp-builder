@@ -1,0 +1,66 @@
+---
+/**
+ * /admin/my-links
+ *
+ * MyLinks management screen — register / edit / delete reusable
+ * destinations referenced by CTA buttons across LPs.
+ */
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import MyLinksManager from '../../components/admin/MyLinksManager';
+
+export const prerender = false;
+---
+
+<AdminLayout title="よく使うリンク">
+  <div class="my-links-page">
+    <header class="page-header">
+      <h1>よく使うリンク</h1>
+      <p>LINE・予約フォーム・問い合わせ先など、LPボタンで使うリンクをまとめて管理します。</p>
+    </header>
+
+    <MyLinksManager client:load />
+  </div>
+</AdminLayout>
+
+<style>
+  .my-links-page {
+    --admin-ink: #3f4352;
+    --admin-muted: #8b91a1;
+    margin: 0 auto;
+    max-width: 56rem;
+  }
+
+  .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header h1 {
+    color: var(--admin-ink);
+    font-size: 1.9rem;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .page-header p {
+    color: var(--admin-muted);
+    font-size: 0.95rem;
+    font-weight: 400;
+    line-height: 1.55;
+    margin: 0.55rem 0 0;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      margin-bottom: 1.25rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.45rem;
+    }
+
+    .page-header p {
+      font-size: 0.88rem;
+    }
+  }
+</style>
