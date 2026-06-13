@@ -201,26 +201,7 @@ const bootstrap = {
             <details class="release-notes">
               <summary>このアップデートの内容を見る</summary>
               <div class="release-body">{update.releaseBody}</div>
-              {update.releaseUrl && (
-                <a
-                  href={update.releaseUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="release-link release-link-secondary"
-                >
-                  GitHubで詳細を見る →
-                </a>
-              )}
             </details>
-          ) : update.releaseUrl ? (
-            <a
-              href={update.releaseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="release-link"
-            >
-              リリースノートを確認する →
-            </a>
           ) : null}
 
           <div class="action-area">
