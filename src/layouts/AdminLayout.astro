@@ -4,7 +4,7 @@ import AdminConfirmDialog from '../components/admin/AdminConfirmDialog';
 import AdminToast from '../components/admin/AdminToast';
 import { AlertTriangle, FileText, Link2, Settings, Users, X, Zap } from 'lucide-react';
 import { env } from 'cloudflare:workers';
-import { checkForUpdate } from '../lib/version';
+import { checkForUpdate, CURRENT_VERSION } from '../lib/version';
 import { roleLabel } from '../lib/labels';
 import { isValidManagedProviderUrl, resolveManagedProviderConfig } from '../lib/managed-provider-config';
 
@@ -181,9 +181,9 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
           })}
         </nav>
 
-        {mpConfig.managedAdminCta.visible && (
-          <div class="sidebar-footer">
-            {managedAdminCtaHref ? (
+        <div class="sidebar-footer">
+          {mpConfig.managedAdminCta.visible && (
+            managedAdminCtaHref ? (
               <a
                 href={managedAdminCtaHref}
                 target="_blank"
@@ -213,9 +213,13 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
                 <span class="line-cta">{mpConfig.managedAdminCta.text}</span>
               </span>
               </div>
-            )}
+            )
+          )}
+          <div class={`sidebar-version ${mpConfig.managedAdminCta.visible ? '' : 'sidebar-version-alone'}`}>
+            <span class="sidebar-version-label">現在のバージョン</span>
+            <a href="/admin/update" class="sidebar-version-link">v{CURRENT_VERSION}</a>
           </div>
-        )}
+        </div>
       </aside>
 
       <main class="admin-main">
@@ -822,6 +826,9 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
 
   /* Sidebar footer (LINE button) */
   .sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
     padding: 1.25rem 0 0;
     margin-top: 1rem;
     border-top: 0;
@@ -889,6 +896,42 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
     font-size: 0.9375rem;
     font-weight: 800;
     line-height: 1.2;
+  }
+
+  .sidebar-version {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0 0.2rem;
+    color: var(--admin-text-faint);
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  .sidebar-version-alone {
+    padding-top: 0.35rem;
+  }
+
+  .sidebar-version-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-version-link {
+    flex: 0 0 auto;
+    color: var(--admin-text-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .sidebar-version-link:hover {
+    color: var(--admin-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   /* Main content */
