@@ -99,9 +99,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // workers.dev kill switch: when the self-hoster flips
   // workers_dev_disabled on, every request that landed on a
-  // *.workers.dev host gets 301'd to lp.{domain}/{same path}. Public
+  // *.workers.dev host gets 301'd to {public-host}/{same path}. Public
   // LPs, /admin, /api, /go, /preview — the lot. The point is that
-  // the self-hoster can decide "I'm consolidated on lp.{domain} now,
+  // the self-hoster can decide "I'm consolidated on my custom host now,
   // anyone still bookmarking the workers.dev URL should just be
   // forwarded once and never see it again." Path + query are
   // preserved so deep links don't break.
@@ -113,7 +113,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return new Response(null, {
           status: 301,
           headers: {
-            Location: `https://lp.${targetDomain}${pathname}${url.search}`,
+            Location: `https://${targetDomain}${pathname}${url.search}`,
             // Long-cache the redirect so repeat visits from the
             // legacy host don't keep hitting D1 just to learn the
             // same answer. Self-hosters re-enabling workers.dev will
@@ -350,11 +350,11 @@ function legacyRouteRedirect(
  * - Referrer-Policy: trims referrer for cross-origin navigation.
  * - Permissions-Policy: turns off browser APIs LPs never need.
  * - X-Image-LP-Builder-Version: identifies this response as coming from an
- *   image-lp-builder Worker. The domain settings panel pings
- *   lp.{domain} during a save and uses this header to tell apart
- *   "you wired it up correctly" from "lp.{domain} is hosted by
- *   something else entirely." Bumped together with package.json so
- *   the value also doubles as a build-version probe.
+ *   image-lp-builder Worker. The domain settings panel pings the
+ *   configured public host during a save and uses this header to tell
+ *   apart "you wired it up correctly" from "this host is served by
+ *   something else entirely." Bumped together with package.json so the
+ *   value also doubles as a build-version probe.
  */
 function applySecurityHeaders(response: Response): void {
   response.headers.set('X-Content-Type-Options', 'nosniff');

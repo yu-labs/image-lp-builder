@@ -2643,12 +2643,12 @@ export interface SiteMeta {
   ogp_default_image_url: string | null;
   ogp_default_title: string | null;
   ogp_default_description: string | null;
-  // Bare apex the self-hoster entered on the site-settings page,
-  // e.g. "example.com". The Worker derives lp.{domain} as the public
-  // host. NULL means the self-hoster hasn't wired a custom domain yet —
+  // Public host the self-hoster entered on the site-settings page,
+  // e.g. "lp.example.com" or "campaign.example.com". NULL means
+  // the self-hoster hasn't wired a custom domain yet —
   // everything (canonical, QR, share URL) falls back to workers.dev.
   domain: string | null;
-  // When 1, every workers.dev request 301s to lp.{domain}/{path}.
+  // When 1, every workers.dev request 301s to https://{domain}/{path}.
   // INTEGER (0/1) because SQLite has no boolean — callers should
   // treat 0 as "workers.dev still works" and 1 as "workers.dev is the
   // legacy URL, please redirect".

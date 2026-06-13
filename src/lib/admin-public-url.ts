@@ -6,14 +6,14 @@
  *
  *   - {worker-name}.{account}.workers.dev   (always, free, the URL
  *     the operator gets the moment they click "Deploy to Cloudflare")
- *   - lp.{self-hoster-domain}                  (once they wire a custom
+ *   - {self-hoster-public-host}                (once they wire a custom
  *     domain via /admin/site-settings and bind it in the CF dashboard)
  *
  * Pretty much every "what URL should I copy / QR-encode / preview"
  * decision in the admin UI reduces to:
  *
  *   "Did the operator set a custom domain? If yes, advertise
- *    lp.{domain}; if no, advertise the host they're currently on."
+ *    that public host; if no, advertise the host they're currently on."
  *
  * Each island used to derive that from `window.location.origin`,
  * which is wrong as soon as a custom domain is wired but the
@@ -40,7 +40,7 @@ async function fetchPublicOrigin(): Promise<string> {
       data?: { domain: string | null };
     };
     const domain = json?.data?.domain ?? null;
-    return domain ? `https://lp.${domain}` : fallback;
+    return domain ? `https://${domain}` : fallback;
   } catch {
     // Network blip or auth hiccup. The fallback (request origin)
     // is the same value every island used before this hook existed,

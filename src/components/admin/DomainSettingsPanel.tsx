@@ -4,18 +4,18 @@
  * Lets the self-hoster wire a custom domain to this Worker.
  *
  * Two-step model:
- *   1. Self-hoster registers lp.{domain} as a Custom Domain in
+ *   1. Self-hoster registers the public host as a Custom Domain in
  *      Cloudflare's dashboard.
- *   2. Self-hoster types the bare apex into this panel; we sanitise,
- *      validate, probe lp.{domain} for our X-Image-LP-Builder-Version header,
+ *   2. Self-hoster types that exact host into this panel; we sanitise,
+ *      validate, probe it for our X-Image-LP-Builder-Version header,
  *      and only then commit it to D1. From that point on canonical
  *      URLs, QR codes, share links and Set-Cookie domains all flip
  *      to the new host.
  *
  * The probe is the interesting part — we lean on /api/site-domain
- * (Worker side) to call lp.{domain} so the browser doesn't have to
+ * (Worker side) to call the public host so the browser doesn't have to
  * deal with CORS. The self-hoster checks the connection explicitly,
- * and the save button only unlocks once lp.{domain} is reachable.
+ * and the save button only unlocks once that host is reachable.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -106,7 +106,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
   const [setupChecks, setSetupChecks] = useState({
     cloudflareZone: false,
     customDomain: false,
-    bareDomain: false,
+    publicHost: false,
   });
   const [setupValidationVisible, setSetupValidationVisible] = useState(false);
   // After a blur-triggered auto-correction we freeze the before/after
@@ -143,7 +143,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
       setSetupChecks({
         cloudflareZone: Boolean(json.data.domain),
         customDomain: Boolean(json.data.domain),
-        bareDomain: Boolean(json.data.domain),
+        publicHost: Boolean(json.data.domain),
       });
       setDomainCheck(
         json.data.domain
@@ -179,6 +179,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
   // correction — paste, pause, done.
   useEffect(() => {
     if (!preview) return;
+    if (preview.validationError) return;
     const before = input;
     const after = preview.cleaned;
     if (before.trim() === after) return;
@@ -229,7 +230,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
       setDomainCheck({
         status: 'error',
         domain: '',
-        message: 'ドメイン名を入力してください',
+        message: '公開ホスト名を入力してください',
       });
       return;
     }
@@ -253,7 +254,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
       if (!probe) throw new Error('接続確認に失敗しました');
 
       setPreview(probe);
-      if (probe.cleaned !== raw.toLowerCase()) {
+      if (!probe.validationError && probe.cleaned !== raw.toLowerCase()) {
         setInput(probe.cleaned);
       }
       if (probe.notes.length > 0) {
@@ -283,7 +284,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
         domain: probe.cleaned,
         message:
           probe.connection?.detail ??
-          `lp.${probe.cleaned} へ接続できませんでした`,
+          `${probe.cleaned} へ接続できませんでした`,
       });
     } catch (err) {
       setDomainCheck({
@@ -357,7 +358,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
       setSetupChecks({
         cloudflareZone: Boolean(json.data.domain),
         customDomain: Boolean(json.data.domain),
-        bareDomain: Boolean(json.data.domain),
+        publicHost: Boolean(json.data.domain),
       });
       setDomainCheck(
         json.data.domain
@@ -396,7 +397,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
       setSetupChecks({
         cloudflareZone: false,
         customDomain: false,
-        bareDomain: false,
+        publicHost: false,
       });
       setSetupValidationVisible(false);
       setDomainCheck({ status: 'idle' });
@@ -431,9 +432,8 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
     setupChecksComplete &&
     (savedDomainReady || checkedDomainReady);
   const displayDomain =
-    preview?.cleaned || input.trim().toLowerCase() || saved.domain || '{ドメイン名}';
-  const displayLpHost = `lp.${displayDomain}`;
-  const displayPublicUrl = `https://${displayLpHost}/{URL末尾}`;
+    preview?.cleaned || input.trim().toLowerCase() || saved.domain || '{公開ホスト名}';
+  const displayPublicUrl = `https://${displayDomain}/{URL末尾}`;
   const currentPublicUrl = `${currentOrigin || '現在のURL'}/{URL末尾}`;
   const dirty = useMemo(() => {
     const inputNormalised = input.trim().toLowerCase();
@@ -475,16 +475,16 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
             <li>
               CloudflareのCustom Domainに
               <code className="mx-1 rounded-full bg-white px-2 py-0.5 font-mono text-[11px] text-[#244464]">
-                {displayLpHost}
+                {displayDomain}
               </code>
               を追加します。
             </li>
             <li>
-              この画面には
+              この画面にも同じホスト名
               <code className="mx-1 rounded-full bg-white px-2 py-0.5 font-mono text-[11px] text-[#244464]">
                 {displayDomain}
               </code>
-              だけ入力します。
+              を入力します。
             </li>
             <li>
               保存後、公開URLが
@@ -510,7 +510,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
           htmlFor="domain-input"
           className={EDITOR_LABEL_CLASS}
         >
-          変更したいドメイン名
+          公開ホスト名
         </label>
         <input
           id="domain-input"
@@ -523,7 +523,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
             setSetupChecks({
               cloudflareZone: false,
               customDomain: false,
-              bareDomain: false,
+              publicHost: false,
             });
             setSetupValidationVisible(false);
             // The previous correction now describes a stale state —
@@ -533,7 +533,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
           onBlur={() => {
             if (input.trim().length > 0) setDomainValidationVisible(true);
           }}
-          placeholder="example.com"
+          placeholder="lp.example.com"
           autoComplete="off"
           spellCheck={false}
           className={`${EDITOR_INPUT_CLASS} block w-full font-mono`}
@@ -560,23 +560,23 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
                 <>
                   CloudflareのCustom Domainに
                   <code className="mx-1 font-mono text-[#3f4352]">
-                    {displayLpHost}
+                    {displayDomain}
                   </code>
                   を追加済み。
                 </>
               ),
             },
             {
-              id: 'bare-domain',
-              checked: setupChecks.bareDomain,
-              onChange: () => toggleSetupCheck('bareDomain'),
+              id: 'public-host',
+              checked: setupChecks.publicHost,
+              onChange: () => toggleSetupCheck('publicHost'),
               label: (
                 <>
-                  この欄には
+                  この欄にはCloudflareに追加したホスト名
                   <code className="mx-1 font-mono text-[#3f4352]">
                     {displayDomain}
                   </code>
-                  だけ入力。
+                  をそのまま入力。
                 </>
               ),
             },
@@ -660,13 +660,13 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
       {cleaned && !preview?.validationError && (
         <AdminCallout title="公開URLのプレビュー" className="space-y-1">
           <div>
-            <span className="text-[#8b91a1]">入力するドメイン名：</span>{' '}
+            <span className="text-[#8b91a1]">入力する公開ホスト名：</span>{' '}
             <code className="font-mono">{cleaned}</code>
           </div>
           <div>
             <span className="text-[#8b91a1]">公開URL:</span>{' '}
             <code className="font-mono text-[#567baf]">
-              https://lp.{cleaned}/{'{URL末尾}'}
+              https://{cleaned}/{'{URL末尾}'}
             </code>
           </div>
         </AdminCallout>
@@ -683,7 +683,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
               </span>
               へアクセスされた時、
               <span className="mx-1 font-mono text-[#596173]">
-                https://lp.{'{ドメイン}'}/{"{URL末尾}"}
+                https://{'{独自ドメイン}'}/{"{URL末尾}"}
               </span>
               へ移動させます。（旧URLでもアクセスできるようにしたい場合はOFFにしてください。）
             </>
@@ -743,7 +743,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
               setSetupChecks({
                 cloudflareZone: Boolean(saved.domain),
                 customDomain: Boolean(saved.domain),
-                bareDomain: Boolean(saved.domain),
+                publicHost: Boolean(saved.domain),
               });
               setSetupValidationVisible(false);
               setDomainCheck(
@@ -765,7 +765,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
           <ModalHeader title="ドメインがまだ繋がっていません" tone="warning" />
           <p className="text-sm leading-[1.55] text-[#596173]">
             <code className="rounded-full bg-[#f2f4f8] px-2 py-0.5 font-mono">
-              lp.{modal.cleaned}
+              {modal.cleaned}
             </code>{' '}
             への接続を確認できませんでした。<br />Cloudflare側の設定が必要です。
           </p>
@@ -782,10 +782,10 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
               </li>
               <li>
                 <span className="font-bold">
-                  ルートドメイン（{modal.cleaned}）で登録した
+                  Cloudflareに追加したホスト名と入力が違う
                 </span>
                 <span className="ml-3 block text-[#8b91a1]">
-                  → lp.{modal.cleaned} として登録し直してください
+                  → CloudflareのCustom Domainと、この画面の公開ホスト名を同じ値にしてください
                 </span>
               </li>
               <li>
@@ -795,7 +795,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
                 </span>
               </li>
               <li>
-                <span className="font-bold">ドメイン名の打ち間違い</span>
+                <span className="font-bold">公開ホスト名の打ち間違い</span>
                 <span className="ml-3 block text-[#8b91a1]">
                   → スペル / ピリオドを確認して入力し直してください
                 </span>
@@ -832,7 +832,7 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
           <ModalHeader title="独自ドメインを設定しました" tone="success" />
           <p className="text-sm leading-[1.55] text-[#596173]">
             <code className="rounded-full bg-[#eef4fb] px-2 py-0.5 font-mono text-[#567baf]">
-              lp.{modal.domain}
+              {modal.domain}
             </code>{' '}
             を公開URLとして使う設定を保存しました。<br />
             各LPのURL末尾はそのままです。
@@ -844,12 +844,12 @@ export default function DomainSettingsPanel({ hideHeading = false }: Props) {
                 {modal.slugs.map((slug) => (
                   <li key={slug}>
                     <a
-                      href={`https://lp.${modal.domain}/${slug}`}
+                      href={`https://${modal.domain}/${slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-mono text-[#567baf] hover:underline"
                     >
-                      https://lp.{modal.domain}/{slug}
+                      https://{modal.domain}/{slug}
                     </a>
                   </li>
                 ))}

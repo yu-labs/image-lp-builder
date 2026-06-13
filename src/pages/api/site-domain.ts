@@ -6,13 +6,13 @@
  * URL, robots.txt, kill switch, parent-share cookies) and we want
  * the panel to reason about it on its own.
  *
- * GET    -> read the current bare apex + workers_dev_disabled flag
+ * GET    -> read the current public host + workers_dev_disabled flag
  *           plus a sanitisation/validation report when the caller
  *           passed `?probe={input}` so the panel can show inline
  *           error / warning state without saving.
- * PUT    -> persist the bare apex (e.g. "example.com") after
+ * PUT    -> persist the public host (e.g. "lp.example.com") after
  *           sanitising + validating + (optionally) probing
- *           lp.{domain} for X-Image-LP-Builder-Version. The caller can pass
+ *           https://{host}/ for X-Image-LP-Builder-Version. The caller can pass
  *           `force: true` to skip the probe failure block.
  * DELETE -> clear the domain (return to workers.dev only) and
  *           force workers_dev_disabled back to 0 so the kill
@@ -37,13 +37,13 @@ interface SanitiseReport {
 }
 
 interface ProbeResult {
-  // 'ok' = lp.{domain} answered with X-Image-LP-Builder-Version, this is our Worker.
+  // 'ok' = the public host answered with X-Image-LP-Builder-Version.
   // 'no_dns' = network call threw, almost certainly DNS / TLS / not
   //            wired up at Cloudflare yet.
-  // 'apex_only' = lp.{domain} fails but {domain} succeeds with our
-  //               header, self-hoster registered the apex without lp.
-  //               (the "wrong place in CF" case).
-  // 'other_worker' = lp.{domain} answered without X-Image-LP-Builder-Version,
+  // 'apex_only' is kept for backward-compatible response typing. The
+  // current public-host model probes the exact host and no longer
+  // performs derived-subdomain / apex fallback checks.
+  // 'other_worker' = the host answered without X-Image-LP-Builder-Version,
   //                  somebody else is hosting that hostname.
   status: 'ok' | 'no_dns' | 'apex_only' | 'other_worker';
   // Surfaced to the operator UI when we want to show a hint.
@@ -51,9 +51,9 @@ interface ProbeResult {
 }
 
 /**
- * Strip whitespace, surrounding scheme/path/lp prefix and report
+ * Strip whitespace and surrounding scheme/path, then report
  * each rewrite so the UI can flash a "we trimmed X for you" notice.
- * Returns the bare apex (no protocol, no path, no lp. prefix).
+ * Returns the exact public host to use (no protocol, no path).
  */
 function sanitiseDomain(raw: string): SanitiseReport {
   const notes: string[] = [];
@@ -63,10 +63,10 @@ function sanitiseDomain(raw: string): SanitiseReport {
   const lowered = value.toLowerCase();
   if (lowered.startsWith('https://')) {
     value = value.slice(8);
-    notes.push('「https://」は不要です(ドメイン名だけで OK)');
+    notes.push('「https://」は不要です(ホスト名だけで OK)');
   } else if (lowered.startsWith('http://')) {
     value = value.slice(7);
-    notes.push('「http://」は不要です(ドメイン名だけで OK)');
+    notes.push('「http://」は不要です(ホスト名だけで OK)');
   }
 
   // Trim a single trailing slash plus any path the self-hoster pasted.
@@ -77,15 +77,19 @@ function sanitiseDomain(raw: string): SanitiseReport {
     if (trailing === '/') {
       notes.push('末尾の「/」は不要です');
     } else {
-      notes.push('「/」より後ろは不要です(ドメイン名だけで OK)');
+      notes.push('「/」より後ろは不要です(ホスト名だけで OK)');
     }
   }
 
-  // Drop a leading lp. label — the Worker derives lp.{apex}, so the
-  // self-hoster entering "lp.example.com" is the same as "example.com".
-  if (/^lp\./i.test(value)) {
-    value = value.slice(3);
-    notes.push('「lp.」は付けなくて OK です(自動で付きます)');
+  const queryAt = value.search(/[?#]/);
+  if (queryAt !== -1) {
+    value = value.slice(0, queryAt);
+    notes.push('「?」や「#」より後ろは不要です(ホスト名だけで OK)');
+  }
+
+  if (value.endsWith('.')) {
+    value = value.slice(0, -1);
+    notes.push('末尾の「.」は不要です');
   }
 
   // Lowercase the host: DNS is case-insensitive but our equality
@@ -101,9 +105,9 @@ function sanitiseDomain(raw: string): SanitiseReport {
  * you" notices.
  */
 function validateDomain(domain: string): string | null {
-  if (domain.length === 0) return 'ドメインを入力してください';
+  if (domain.length === 0) return '公開ホスト名を入力してください';
   if (domain.length > DOMAIN_MAX) {
-    return 'ドメイン名が長すぎます(例:example.com)';
+    return 'ホスト名が長すぎます(例:lp.example.com)';
   }
   // Reject anything that wouldn't survive a DNS lookup. The regex is
   // permissive on TLD (2+ ASCII letters) so .co.jp etc. work, but
@@ -111,7 +115,7 @@ function validateDomain(domain: string): string | null {
   const labelRe = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
   const labels = domain.split('.');
   if (labels.length < 2) {
-    return 'ドメイン名の形式が違います(例:example.com のように「.com」などが必要)';
+    return 'ホスト名の形式が違います(例:lp.example.com のように「.com」などが必要)';
   }
   for (const label of labels) {
     if (!labelRe.test(label)) {
@@ -120,61 +124,46 @@ function validateDomain(domain: string): string | null {
   }
   const tld = labels[labels.length - 1] ?? '';
   if (!/^[a-z]{2,}$/.test(tld)) {
-    return 'ドメイン名の形式が違います(例:example.com)';
+    return 'ホスト名の形式が違います(例:lp.example.com)';
   }
   // Block hostnames that aren't user-controllable. Self-hosters occasion-
   // ally paste their workers.dev URL by mistake, which would create a
   // self-referential redirect loop the second the kill switch is on.
   if (domain.endsWith('.workers.dev') || domain === 'workers.dev') {
-    return 'workers.dev は独自ドメインに使えません';
+    return 'workers.dev は公開ホスト名に使えません';
   }
   if (
     domain === 'localhost' ||
     domain.endsWith('.localhost') ||
     /^[0-9.]+$/.test(domain)
   ) {
-    return 'localhost / IP アドレスは独自ドメインに使えません';
+    return 'localhost / IP アドレスは公開ホスト名に使えません';
   }
   return null;
 }
 
 /**
- * HEAD-fetch lp.{domain} with a hard timeout and report whether the
- * response came from this Worker. Falls back to probing the apex so
- * we can detect "the self-hoster registered example.com instead of
- * lp.example.com in Cloudflare," which is a recurring footgun.
+ * HEAD-fetch the exact public host with a hard timeout and report
+ * whether the response came from this Worker.
  */
 async function probeDomain(domain: string): Promise<ProbeResult> {
-  const lpUrl = `https://lp.${domain}/`;
-  const apexUrl = `https://${domain}/`;
+  const probeUrl = `https://${domain}/`;
 
-  const lp = await timedFetch(lpUrl);
-  if (lp.ok) {
-    if (lp.response.headers.get('X-Image-LP-Builder-Version')) {
+  const probe = await timedFetch(probeUrl);
+  if (probe.ok) {
+    if (probe.response.headers.get('X-Image-LP-Builder-Version')) {
       return { status: 'ok' };
     }
     // Reachable but not us.
     return {
       status: 'other_worker',
-      detail: '別のサービスが lp サブドメインに割り当てられているようです',
-    };
-  }
-
-  // lp.{domain} didn't answer. See if the apex does — a common
-  // mistake is registering example.com in Cloudflare instead of
-  // lp.example.com.
-  const apex = await timedFetch(apexUrl);
-  if (apex.ok && apex.response.headers.get('X-Image-LP-Builder-Version')) {
-    return {
-      status: 'apex_only',
-      detail:
-        'ルートドメインで Custom Domain を登録しているようです(lp. が必要)',
+      detail: '別のサービスがこのホスト名に割り当てられているようです',
     };
   }
 
   return {
     status: 'no_dns',
-    detail: 'lp サブドメインに到達できません(CF Custom Domain 未登録 / DNS 反映待ち / SSL 証明書発行待ち / タイポの可能性)',
+    detail: '公開ホスト名に到達できません(CF Custom Domain 未登録 / DNS 反映待ち / SSL 証明書発行待ち / タイポの可能性)',
   };
 }
 
@@ -262,7 +251,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   // domain is required on PUT — DELETE handles the clear case.
   const rawDomain = input.domain;
   if (typeof rawDomain !== 'string') {
-    return errors.validationError('`domain` must be a string');
+    return errors.validationError('`domain` must be a string public host');
   }
   const force = input.force === true;
   const workersDevDisabled = input.workersDevDisabled === true;
@@ -279,10 +268,10 @@ export const PUT: APIRoute = async ({ request, locals }) => {
   const probe = await probeDomain(cleaned);
   if (probe.status !== 'ok' && !force) {
     // Surface enough context for the panel to render a "we couldn't
-    // reach lp.{domain}, here's why and a 'save anyway' button" UI
-    // without forcing a second round-trip.
+    // reach this host, here's why" UI without forcing a second
+    // round-trip.
     return errors.conflict(
-      probe.detail ?? 'lp サブドメインに到達できませんでした',
+      probe.detail ?? '公開ホスト名に到達できませんでした',
       {
         cleaned,
         notes,

@@ -34,8 +34,9 @@ export default function PreviewQr({
 }: Props) {
   // The preview window was opened from /admin/...; window.opener
   // points back at the editor. The URL the visitor would hit is
-  // either the request origin (no custom domain) or lp.{domain}
-  // (custom domain wired) — useAdminPublicOrigin makes that call.
+  // either the request origin (no custom domain) or the configured
+  // public host (custom domain wired) — useAdminPublicOrigin makes
+  // that call.
   const origin = useAdminPublicOrigin();
   const [token, setToken] = useState<string | null>(initialToken);
   const [loading, setLoading] = useState(false);

@@ -93,8 +93,8 @@ if (missing.length > 0) {
 const packageJson = JSON.parse(
   readFileSync(path.join(root, 'package.json'), 'utf8')
 );
-if (packageJson.version !== '0.1.0') {
-  fail('package.json version must be 0.1.0 for the initial public release', [
+if (typeof packageJson.version !== 'string' || !/^\d+\.\d+\.\d+$/.test(packageJson.version)) {
+  fail('package.json version must be a stable semver version', [
     `found ${JSON.stringify(packageJson.version)}`,
   ]);
 }

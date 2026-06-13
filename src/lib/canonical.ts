@@ -5,7 +5,7 @@
  *
  *   - {worker-name}.{account}.workers.dev — always, free, the URL the
  *     self-hoster gets the moment they click "Deploy to Cloudflare".
- *   - lp.{self-hoster-domain}                  — once they wire a custom
+ *   - {self-hoster-public-host}                — once they wire a custom
  *     domain on the site-settings page (and bind it in the CF
  *     dashboard).
  *
@@ -22,7 +22,7 @@
  *
  * The rule itself is small and worth stating once:
  *
- *   - site_meta.domain set       -> lp.{domain} is canonical, regardless
+ *   - site_meta.domain set       -> that public host is canonical, regardless
  *                                   of which host the request hit.
  *   - site_meta.domain unset     -> whatever host the request hit is
  *                                   canonical (workers.dev URL stays
@@ -37,7 +37,7 @@ export interface ResolvedHost {
   host: string;
   /** "https:" in production, mirrors the request scheme on localhost. */
   scheme: 'http:' | 'https:';
-  /** True when site_meta.domain is set and we're returning lp.{domain}. */
+  /** True when site_meta.domain is set and we're returning that public host. */
   isCustomDomain: boolean;
   /** True when the *request* hit a *.workers.dev host. */
   requestIsWorkersDev: boolean;
@@ -73,13 +73,13 @@ export function resolvePublicHost(
   const requestIsWorkersDev = requestHostname.endsWith(WORKERS_DEV_SUFFIX);
   const domain = siteMeta?.domain?.trim();
 
-  // Custom domain wired? Force lp.{domain} as the canonical host
+  // Custom domain wired? Force the configured public host as canonical
   // even if the visitor arrived on workers.dev — that's the whole
   // point of the canonical tag, and the workers.dev kill-switch
   // builds the same target for its 301.
   if (domain) {
     return {
-      host: `lp.${domain}`,
+      host: domain,
       scheme: 'https:',
       isCustomDomain: true,
       requestIsWorkersDev,

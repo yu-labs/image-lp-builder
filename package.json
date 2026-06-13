@@ -1,7 +1,7 @@
 {
   "name": "image-lp-builder",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Open-source image-based landing page builder for Cloudflare Workers",
   "license": "AGPL-3.0-or-later",
   "repository": {
@@ -35,6 +35,7 @@
     "generate-types": "wrangler types --env-file .env.example",
     "deploy": "astro build && wrangler deploy",
     "prepare:public-release": "node scripts/prepare-public-release.mjs",
+    "test:domain-public-host": "node scripts/domain-public-host-contract-audit.mjs",
     "test:section-duplicate": "node scripts/section-duplicate-contract-audit.mjs",
     "test:improvement-draft": "node scripts/improvement-draft-contract-audit.mjs",
     "test:migrations": "node scripts/migration-roundtrip.mjs",
@@ -67,6 +68,7 @@
   },
   "pnpm": {
     "overrides": {
+      "esbuild": "^0.28.1",
       "vite": "^7",
       "ws": "^8.20.1",
       "yaml": "^2.8.3"
@@ -81,7 +83,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@types/node": "^22.12.0",
-    "esbuild": "^0.27.7",
+    "esbuild": "^0.28.1",
     "typescript": "^5.9.3"
   }
 }

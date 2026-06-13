@@ -43,7 +43,7 @@ export const GET: APIRoute = ({ request, url }) => {
 
   // Where the relay should drop the visitor after Google completes.
   // Reconstructed against the request URL so it works on
-  // workers.dev, lp.{self-hoster-domain}, and behind any reverse proxy.
+  // workers.dev, a configured custom host, and behind any reverse proxy.
   const returnUrl = new URL('/admin/auth/callback', request.url).toString();
 
   const target = buildRelayStartUrl({ relayUrl, state, returnUrl });
