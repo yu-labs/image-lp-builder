@@ -68,16 +68,9 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
         <a href="/admin/update" class="update-button">
           アップデートする
         </a>
-        {update.releaseUrl && (
-          <a
-            href={update.releaseUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="update-link"
-          >
-            内容を見る →
-          </a>
-        )}
+        <a href="/admin/update" class="update-link">
+          内容を見る →
+        </a>
       </div>
     )}
     <header class="admin-header">
