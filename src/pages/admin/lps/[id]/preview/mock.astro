@@ -51,7 +51,7 @@ if (isPhoneBrowser) {
 const isPublished = lp.status === 'published';
 const siteMeta = db ? await siteMetaQueries.get(db, workspaceId) : null;
 const initialPublicOrigin = siteMeta?.domain?.trim()
-  ? `https://lp.${siteMeta.domain.trim()}`
+  ? `https://${siteMeta.domain.trim()}`
   : Astro.url.origin;
 let initialPreviewToken = lp.preview_token;
 if (!isPublished && db && !initialPreviewToken) {

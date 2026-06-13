@@ -189,9 +189,9 @@ const siteMetaRow = db
   : null;
 const siteMeta = resolveSiteMeta(siteMetaRow);
 // Public URL drives canonical / og:url. Once the self-hoster wires a
-// custom domain, every LP advertises lp.{domain}/{slug} regardless
-// of which host the visitor arrived on — so search engines and
-// social previews consolidate on one URL.
+// custom domain, every LP advertises that configured public host
+// regardless of which host the visitor arrived on — so search engines
+// and social previews consolidate on one URL.
 const publicHost = resolvePublicHost(Astro.url, siteMetaRow);
 const publicUrl = buildPublicUrl(publicHost, `/${parent.slug}`);
 // Belt-and-braces with /robots.txt: when the visitor is on

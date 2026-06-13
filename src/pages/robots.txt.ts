@@ -5,8 +5,8 @@
  *
  *   1. Custom domain wired AND request hit a *.workers.dev host
  *      -> Disallow: / so crawlers stop pulling pages from the
- *         deprecated origin. Indexable pages are served from
- *         lp.{domain}, which already sets a self-referential
+ *         deprecated origin. Indexable pages are served from the
+ *         configured public host, which already sets a self-referential
  *         canonical via PublicLayout.
  *
  *   2. Anything else (workers.dev with no custom domain yet, or the

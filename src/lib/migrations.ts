@@ -25,6 +25,7 @@
 
 import migration0001 from '../../migrations/0001_initial_schema.sql?raw';
 import migration0002 from '../../migrations/0002_hub_connector_snapshot_push.sql?raw';
+import migration0003 from '../../migrations/0003_site_domain_public_host.sql?raw';
 
 interface Migration {
   version: string;
@@ -49,6 +50,7 @@ interface MigrationRunOptions {
 const MIGRATIONS: ReadonlyArray<Migration> = [
   { version: '0001_initial_schema', sql: migration0001 },
   { version: '0002_hub_connector_snapshot_push', sql: migration0002 },
+  { version: '0003_site_domain_public_host', sql: migration0003 },
 ];
 
 const REQUIRED_BASELINE_TABLES = [
