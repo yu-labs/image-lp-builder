@@ -71,6 +71,9 @@ const installError = Astro.url.searchParams.get('install_error');
 
 const lockInProgress = !!lock && lock.stage !== 'failed';
 const lockFailed = !!lock && lock.stage === 'failed';
+const failedMessage = (
+  lock?.errorMessage ?? '不明なエラーが発生しました。'
+).replace(/<br\s*\/?>/gi, ' ');
 
 const bootstrap = {
   lock: lock
@@ -97,7 +100,7 @@ const bootstrap = {
   <div class="update-page">
     <header class="page-header">
       {lockInProgress ? (
-        <span class="back-link-disabled">アップデート中はページを離れられません</span>
+        <span class="back-link-disabled">アップデート中は他の管理画面へ移動できません</span>
       ) : (
         <a href="/admin" class="back-link">← 管理画面に戻る</a>
       )}
@@ -114,7 +117,8 @@ const bootstrap = {
 
       {installOk && (
         <div class="banner banner-success">
-          GitHub Appのインストールが完了しました。<br />「アップデートを実行」を押すと反映が始まります。
+          GitHub Appのインストールが完了しました。<br />
+          「アップデートを実行」を押すと反映が始まります。
         </div>
       )}
       {installError && (
@@ -146,8 +150,8 @@ const bootstrap = {
         <section class="status-card status-in-progress" id="state-in-progress">
           <h2>アップデート中です</h2>
           <p>
-            操作はできません。<br />しばらくお待ちください（最大5分程度）。<br />
-            このページを閉じても、内部処理はそのまま進行します。
+            アップデートを反映しています。完了するまでこの画面を開いたままお待ちください。<br />
+            ブラウザを閉じても処理は続きますが、完了や失敗の確認ができません。
           </p>
 
           <ol class="stage-list" id="stage-list">
@@ -174,7 +178,7 @@ const bootstrap = {
         <section class="status-card status-error" id="state-failed">
           <h2>アップデートに失敗しました</h2>
           <p id="failed-message">
-            {lock?.errorMessage ?? '不明なエラーが発生しました。'}
+            {failedMessage}
           </p>
           <div class="action-area">
             <button type="button" class="update-button" id="dismiss-failed-button">
@@ -209,9 +213,17 @@ const bootstrap = {
               アップデートを実行
             </button>
             <p class="action-note">
-              {isInstalled
-                ? '「アップデートを実行」を押すと、GitHubと同期 → Cloudflare再ビルド → 新版確認を自動で行います（2〜5分）。<br />完了まで他の管理画面操作はできません。'
-                : '初回のみGitHub Appのインストール画面を経由します（1クリック）。<br />インストール後、自動でアップデートが始まります。'}
+              {isInstalled ? (
+                <>
+                  「アップデートを実行」を押すと、GitHubと同期 → Cloudflare再ビルド → 新版確認を自動で行います（2〜5分）。<br />
+                  完了まではこの画面を開いたままお待ちください。他の管理画面操作は一時的にできません。
+                </>
+              ) : (
+                <>
+                  初回のみGitHub Appのインストール画面を経由します（1クリック）。<br />
+                  インストール後、自動でアップデートが始まります。
+                </>
+              )}
             </p>
           </div>
         </section>
@@ -232,7 +244,8 @@ const bootstrap = {
         <section class="status-card status-error">
           <h2>バージョン情報を取得できませんでした</h2>
           <p>
-            GitHubへの接続に失敗しています。<br />ネットワークを確認の上、
+            GitHubへの接続に失敗しています。<br />
+            ネットワークを確認の上、
             しばらく待ってから再読み込みしてください。
           </p>
         </section>
@@ -571,16 +584,16 @@ const bootstrap = {
                 'ビルドが時間内に完了しませんでした。元の状態に戻そうとしましたが、結果を確認できませんでした。';
             } else if (revert.status === 'reverted') {
               msg =
-                'ビルドが時間内に完了しませんでした。GitHubを元のバージョンに戻しました。<br />少し待ってからもう一度お試しください。';
+                'ビルドが時間内に完了しませんでした。GitHubを元のバージョンに戻しました。少し待ってからもう一度お試しください。';
             } else if (revert.status === 'no_install') {
               msg =
-                'ビルドが時間内に完了しませんでした。GitHub Appの連携情報がないため、自動巻き戻しができません。<br />手動で前のリリースに戻してください。';
+                'ビルドが時間内に完了しませんでした。GitHub Appの連携情報がないため、自動巻き戻しができません。手動で前のリリースに戻してください。';
             } else if (revert.status === 'noop') {
               msg =
-                'ビルドが時間内に完了しませんでした。巻き戻し対象の差分はありませんでした。<br />Cloudflareのビルド画面を確認してください。';
+                'ビルドが時間内に完了しませんでした。巻き戻し対象の差分はありませんでした。Cloudflareのビルド画面を確認してください。';
             } else {
               msg =
-                'ビルドが時間内に完了しませんでした。自動的な巻き戻しに失敗しました。<br />GitHubとCloudflareの状態を確認してください。';
+                'ビルドが時間内に完了しませんでした。自動的な巻き戻しに失敗しました。GitHubとCloudflareの状態を確認してください。';
             }
             showFailed(msg);
           });
@@ -592,7 +605,7 @@ const bootstrap = {
 
         if (elapsed > TIMEOUT_MS) {
           showFailed(
-            'タイムアウトしました（10分以上応答なし）。<br />CloudflareのBuilds画面を確認してください。'
+            'タイムアウトしました（10分以上応答なし）。CloudflareのBuilds画面を確認してください。'
           );
           return;
         }
