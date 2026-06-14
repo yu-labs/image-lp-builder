@@ -66,10 +66,7 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
           <span class="update-current">(現在 v{update.current})</span>
         </span>
         <a href="/admin/update" class="update-button">
-          アップデートする
-        </a>
-        <a href="/admin/update" class="update-link">
-          内容を見る →
+          アップデートを確認
         </a>
       </div>
     )}
@@ -495,8 +492,7 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
     color: #92400e;
   }
 
-  .update-banner-critical .update-text strong,
-  .update-banner-critical .update-link {
+  .update-banner-critical .update-text strong {
     color: #991b1b;
   }
 
@@ -539,20 +535,6 @@ const userInitial = user?.email?.trim().charAt(0).toUpperCase() || 'U';
 
   .update-banner-critical .update-button:hover {
     background: #991b1b;
-  }
-
-  .update-link {
-    color: #92400e;
-    text-decoration: underline;
-    font-weight: 600;
-  }
-
-  .update-link:hover {
-    color: #78350f;
-  }
-
-  .update-banner-critical .update-link:hover {
-    color: #7f1d1d;
   }
 
   /* Header */
