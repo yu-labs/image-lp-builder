@@ -11,6 +11,8 @@ export const EDITOR_HELP_CLASS =
   'text-[11px] font-semibold leading-relaxed text-[#8b91a1]';
 export const EDITOR_INPUT_CLASS =
   'min-h-[2.75rem] rounded-xl border border-[#d7deea] bg-white px-3 py-2 text-sm text-[#3f4352] outline-none transition focus:border-[#9bb4d6] focus:ring-2 focus:ring-[#d8e3f2] disabled:bg-[#f8fafc] disabled:opacity-70';
+export const EDITOR_SELECT_CLASS =
+  'min-h-[2.75rem] rounded-xl border border-[#d7deea] bg-white px-3 py-2 text-sm font-semibold text-[#3f4352] outline-none transition focus:border-[#9bb4d6] focus:ring-2 focus:ring-[#d8e3f2] disabled:bg-[#f8fafc] disabled:opacity-70';
 export const EDITOR_PRIMARY_BUTTON_CLASS =
   'inline-flex min-h-[2.75rem] items-center justify-center rounded-full bg-[#567baf] px-4 py-2 text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(86,123,175,0.16)] transition hover:bg-[#4c6f9f] disabled:cursor-not-allowed disabled:opacity-50';
 export const EDITOR_SECONDARY_BUTTON_CLASS =

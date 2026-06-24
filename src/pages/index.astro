@@ -1,0 +1,38 @@
+---
+/**
+ * Root route (/)
+ *
+ * The homepage is not an empty slug. Site settings can point root
+ * traffic at one published LP; we redirect to that LP's canonical
+ * `/{slug}` URL so OGP/canonical/Connector payloads stay in one place.
+ */
+
+import { env } from 'cloudflare:workers';
+import { pageQueries, siteMetaQueries } from '../lib/db';
+import { readHomePageId } from '../lib/site-meta';
+
+export const prerender = false;
+
+const db = env?.DB;
+const workspaceId = Astro.locals.workspace_id;
+
+if (!db) {
+  return Astro.redirect('/admin', 302);
+}
+
+try {
+  const siteMeta = await siteMetaQueries.get(db, workspaceId);
+  const homePageId = readHomePageId(siteMeta?.meta ?? null);
+  const homePage = homePageId
+    ? await pageQueries.findLivePublishedById(db, workspaceId, homePageId)
+    : null;
+
+  if (homePage) {
+    return Astro.redirect(`/${homePage.slug}${Astro.url.search}`, 302);
+  }
+} catch (err) {
+  console.error('GET / failed to resolve homepage LP:', err);
+}
+
+return Astro.redirect('/admin', 302);
+---

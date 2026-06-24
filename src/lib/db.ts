@@ -321,6 +321,15 @@ export interface PageWithPublished extends Page {
   live_content: string;
 }
 
+export interface PagePublicSummary {
+  id: string;
+  title: string | null;
+  slug: string;
+  status: 'published';
+  publish_at: string | null;
+  unpublish_at: string | null;
+}
+
 /**
  * Page-related queries.
  *
@@ -500,6 +509,66 @@ export const pageQueries = {
       }>();
 
     return (result.results ?? []).map(hydrateWithDraft);
+  },
+
+  async listLivePublishedSummaries(
+    db: D1Database,
+    workspaceId: string
+  ): Promise<PagePublicSummary[]> {
+    const result = await db
+      .prepare(
+        `SELECT
+           p.id,
+           p.title,
+           p.slug,
+           p.status,
+           p.publish_at,
+           p.unpublish_at,
+           COALESCE(pub.version_id, p.published_version_id) AS published_version_id_resolved
+         FROM pages p
+         LEFT JOIN publications pub ON pub.id = p.latest_publication_id
+         WHERE p.workspace_id = ? AND p.status = 'published'
+         ORDER BY p.updated_at DESC`
+      )
+      .bind(workspaceId)
+      .all<
+        PagePublicSummary & {
+          published_version_id_resolved: string | null;
+        }
+      >();
+
+    return (result.results ?? [])
+      .filter((row) => row.published_version_id_resolved && isLiveNow(row))
+      .map(({ published_version_id_resolved: _drop, ...row }) => row);
+  },
+
+  async findLivePublishedById(
+    db: D1Database,
+    workspaceId: string,
+    id: string
+  ): Promise<Page | null> {
+    const row = await db
+      .prepare(
+        `SELECT
+           p.*,
+           COALESCE(pub.version_id, p.published_version_id) AS published_version_id_resolved
+         FROM pages p
+         LEFT JOIN publications pub ON pub.id = p.latest_publication_id
+         WHERE p.id = ? AND p.workspace_id = ? AND p.status = 'published'
+         LIMIT 1`
+      )
+      .bind(id, workspaceId)
+      .first<
+        Page & {
+          published_version_id_resolved: string | null;
+        }
+      >();
+
+    if (!row || !row.published_version_id_resolved || !isLiveNow(row)) {
+      return null;
+    }
+    const { published_version_id_resolved: _drop, ...page } = row;
+    return page;
   },
 
   /**
@@ -1818,7 +1887,10 @@ export const siteSettingsQueries = {
  *   - unpublish_at null → end of time
  *   - unpublish_at set → must be in the future
  */
-export function isLiveNow(page: Page, now: Date = new Date()): boolean {
+export function isLiveNow(
+  page: Pick<Page, 'status' | 'publish_at' | 'unpublish_at'>,
+  now: Date = new Date()
+): boolean {
   if (page.status !== 'published') return false;
   const t = now.getTime();
   if (page.publish_at) {
@@ -1833,7 +1905,7 @@ export function isLiveNow(page: Page, now: Date = new Date()): boolean {
 }
 
 export function isPublicationEnded(
-  page: Page,
+  page: Pick<Page, 'status' | 'latest_publication_id' | 'unpublish_at'>,
   now: Date = new Date()
 ): boolean {
   if (page.status === 'archived' && page.latest_publication_id) return true;
