@@ -19,11 +19,43 @@ export interface ResolvedSiteMeta {
   commercialTransactionUrl?: string | null;
 }
 
-interface MetaShape {
+export type SiteMetaJson = Record<string, unknown> & {
   appleTouchIcon?: string;
   termsOfServiceUrl?: string;
   privacyPolicyUrl?: string;
   commercialTransactionUrl?: string;
+  homePageId?: string;
+};
+
+export function readSiteMetaJson(metaRaw: string | null): SiteMetaJson {
+  if (!metaRaw) return {};
+  try {
+    const parsed = JSON.parse(metaRaw) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as SiteMetaJson;
+    }
+  } catch {
+    /* ignore corrupt meta */
+  }
+  return {};
+}
+
+export function readHomePageId(metaRaw: string | null): string | null {
+  const value = readSiteMetaJson(metaRaw).homePageId;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+export function siteMetaJsonWithHomePageId(
+  metaRaw: string | null,
+  homePageId: string | null
+): string {
+  const meta = readSiteMetaJson(metaRaw);
+  if (homePageId && homePageId.trim()) {
+    meta.homePageId = homePageId.trim();
+  } else {
+    delete meta.homePageId;
+  }
+  return JSON.stringify(meta);
 }
 
 export function resolveSiteMeta(
@@ -31,15 +63,7 @@ export function resolveSiteMeta(
 ): ResolvedSiteMeta | undefined {
   if (!row) return undefined;
 
-  let parsedMeta: MetaShape = {};
-  if (row.meta) {
-    try {
-      const parsed = JSON.parse(row.meta) as unknown;
-      if (parsed && typeof parsed === 'object') parsedMeta = parsed as MetaShape;
-    } catch {
-      /* ignore corrupt meta */
-    }
-  }
+  const parsedMeta = readSiteMetaJson(row.meta);
 
   const result: ResolvedSiteMeta = {
     faviconUrl: row.favicon_url,

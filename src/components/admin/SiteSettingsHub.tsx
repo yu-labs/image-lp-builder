@@ -3,6 +3,7 @@ import {
   Code2,
   FileText,
   Globe2,
+  House,
   Image,
   Link2,
   Megaphone,
@@ -26,9 +27,11 @@ import { SITE_SETTINGS_STATUS_CHANGED } from '../../lib/site-settings-events';
 import SiteMetaPanel from './SiteMetaPanel';
 import SiteLegalLinksPanel from './SiteLegalLinksPanel';
 import SiteSettingsPanel from './SiteSettingsPanel';
+import HomePageSettingsPanel from './HomePageSettingsPanel';
 
 type SettingsCardId =
   | 'site-icon'
+  | 'home-page'
   | 'legal-links'
   | 'maintenance'
   | 'gtm'
@@ -47,7 +50,7 @@ interface SettingsCard {
   iconClassName: string;
 }
 
-type CardStatus = '設定済み' | '未設定' | 'ON' | 'OFF';
+type CardStatus = '設定済み' | '未設定' | '要確認' | 'ON' | 'OFF';
 
 const GROUPS: Array<{ title: string; cards: SettingsCard[] }> = [
   {
@@ -58,6 +61,13 @@ const GROUPS: Array<{ title: string; cards: SettingsCard[] }> = [
         title: 'サイトアイコン',
         description: 'ブラウザタブやスマホ保存時のアイコン',
         icon: Image,
+        iconClassName: 'text-[#567baf]',
+      },
+      {
+        id: 'home-page',
+        title: 'サイトトップ',
+        description: '公開URLの / から開くLP',
+        icon: House,
         iconClassName: 'text-[#567baf]',
       },
       {
@@ -188,8 +198,9 @@ export default function SiteSettingsHub() {
 
   async function loadStatuses() {
     try {
-      const [meta, settings, tags, domain, hub] = await Promise.all([
+      const [meta, homepage, settings, tags, domain, hub] = await Promise.all([
         fetchJson('/api/site-meta'),
+        fetchJson('/api/site-homepage'),
         fetchJson('/api/site-settings'),
         fetchJson('/api/tracking-tags'),
         fetchJson('/api/site-domain'),
@@ -197,6 +208,7 @@ export default function SiteSettingsHub() {
       ]);
 
       const tagData = tags?.data ?? {};
+      const homepageData = homepage?.data ?? {};
       const hubData = hub?.data ?? {};
       const hubConfigured =
         hubData.scriptUrl ||
@@ -207,6 +219,11 @@ export default function SiteSettingsHub() {
         'site-icon': meta?.data?.faviconUrl || meta?.data?.appleTouchIconUrl
           ? '設定済み'
           : '未設定',
+        'home-page': homepageData.homePage
+          ? '設定済み'
+          : homepageData.homePageNeedsReview
+            ? '要確認'
+            : '未設定',
         'legal-links':
           meta?.data?.termsOfServiceUrl ||
           meta?.data?.privacyPolicyUrl ||
@@ -327,7 +344,7 @@ function SettingsCardButton({
         </div>
         {status && (
           <AdminStatusPill
-            tone={status === '設定済み' || status === 'ON' ? 'success' : 'neutral'}
+            tone={statusTone(status)}
             className="w-fit"
           >
             {status}
@@ -340,6 +357,7 @@ function SettingsCardButton({
 
 function renderPanel(active: SettingsCardId) {
   if (active === 'site-icon') return <SiteMetaPanel key={active} hideHeading />;
+  if (active === 'home-page') return <HomePageSettingsPanel key={active} />;
   if (active === 'legal-links') return <SiteLegalLinksPanel key={active} />;
   if (active === 'maintenance') {
     return <SiteSettingsPanel key={active} variant="maintenance" hideHeading />;
@@ -362,6 +380,12 @@ function renderPanel(active: SettingsCardId) {
     return <HubConnectorPanel key={active} hideHeading />;
   }
   return null;
+}
+
+function statusTone(status: CardStatus) {
+  if (status === '設定済み' || status === 'ON') return 'success';
+  if (status === '要確認') return 'warning';
+  return 'neutral';
 }
 
 async function fetchJson(url: string) {

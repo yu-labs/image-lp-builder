@@ -17,28 +17,11 @@ import { env } from 'cloudflare:workers';
 import { siteMetaQueries } from '../../lib/db';
 import { success, errors } from '../../lib/api';
 import { validateUrlScheme } from '../../lib/url';
+import { readSiteMetaJson } from '../../lib/site-meta';
 
 export const prerender = false;
 
 const URL_MAX = 2048;
-
-interface MetaJson {
-  appleTouchIcon?: string;
-  termsOfServiceUrl?: string;
-  privacyPolicyUrl?: string;
-  commercialTransactionUrl?: string;
-}
-
-function readMeta(metaRaw: string | null): MetaJson {
-  if (!metaRaw) return {};
-  try {
-    const parsed = JSON.parse(metaRaw) as unknown;
-    if (parsed && typeof parsed === 'object') return parsed as MetaJson;
-  } catch {
-    /* fall through */
-  }
-  return {};
-}
 
 export const GET: APIRoute = async ({ locals }) => {
   if (!env?.DB) return errors.internalError('Database not configured');
@@ -54,7 +37,7 @@ export const GET: APIRoute = async ({ locals }) => {
         commercialTransactionUrl: null,
       });
     }
-    const meta = readMeta(row.meta);
+    const meta = readSiteMetaJson(row.meta);
     return success({
       faviconUrl: row.favicon_url,
       appleTouchIconUrl: meta.appleTouchIcon ?? null,
@@ -148,7 +131,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
       commercialTransactionUrl !== undefined
     ) {
       const existing = await siteMetaQueries.get(env.DB, locals.workspace_id);
-      const meta = readMeta(existing?.meta ?? null);
+      const meta = readSiteMetaJson(existing?.meta ?? null);
       if (appleTouch === null) delete meta.appleTouchIcon;
       else if (appleTouch !== undefined) meta.appleTouchIcon = appleTouch;
       if (termsOfServiceUrl === null) delete meta.termsOfServiceUrl;
@@ -174,7 +157,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 
   try {
     const updated = await siteMetaQueries.upsert(env.DB, locals.workspace_id, patch);
-    const meta = readMeta(updated.meta);
+    const meta = readSiteMetaJson(updated.meta);
     return success({
       faviconUrl: updated.favicon_url,
       appleTouchIconUrl: meta.appleTouchIcon ?? null,

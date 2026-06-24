@@ -36,6 +36,7 @@
     "deploy": "astro build && wrangler deploy",
     "prepare:public-release": "node scripts/prepare-public-release.mjs",
     "test:domain-public-host": "node scripts/domain-public-host-contract-audit.mjs",
+    "test:homepage-lp": "node scripts/homepage-lp-contract-audit.mjs",
     "test:section-duplicate": "node scripts/section-duplicate-contract-audit.mjs",
     "test:improvement-draft": "node scripts/improvement-draft-contract-audit.mjs",
     "test:migrations": "node scripts/migration-roundtrip.mjs",
