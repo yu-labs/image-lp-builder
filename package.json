@@ -35,6 +35,7 @@
     "generate-types": "wrangler types --env-file .env.example",
     "deploy": "astro build && wrangler deploy",
     "prepare:public-release": "node scripts/prepare-public-release.mjs",
+    "test:cta-url-input": "node scripts/cta-url-input-contract-audit.mjs",
     "test:domain-public-host": "node scripts/domain-public-host-contract-audit.mjs",
     "test:homepage-lp": "node scripts/homepage-lp-contract-audit.mjs",
     "test:section-duplicate": "node scripts/section-duplicate-contract-audit.mjs",

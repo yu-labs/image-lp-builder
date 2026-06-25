@@ -2019,6 +2019,12 @@ function urlValueFromLink(link: CtaLink): string {
 function urlValueForInlineUrl(link: CtaLink): string {
   const url = urlValueFromLink(link);
   if (/^(tel|mailto):/i.test(url)) return '';
+  return url;
+}
+
+function urlValueForModeSwitch(link: CtaLink): string {
+  const url = urlValueFromLink(link);
+  if (/^(tel|mailto):/i.test(url)) return '';
   return isPlaceholderUrl(url) ? '' : url;
 }
 
@@ -2066,7 +2072,7 @@ function CtaLinkForm({ link, onChange, myLinks }: LinkFormProps) {
     setLinkMode(nextMode);
     switch (nextMode) {
       case 'url':
-        onChange({ type: 'custom_url', url: urlValueForInlineUrl(link) });
+        onChange({ type: 'custom_url', url: urlValueForModeSwitch(link) });
         return;
       case 'tel':
         onChange({
