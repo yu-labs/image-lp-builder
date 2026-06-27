@@ -42,7 +42,7 @@ type PageRenderSettings = {
 
 const PUBLICATION_RENDER_SETTINGS_KEY = 'renderSettings';
 const NEW_LP_CONTENT = '{"version":1,"sections":[],"meta":{"noindex":true}}';
-const NEW_LP_PAGE_META = '{"hub_connector":{"enabled":true}}';
+const NEW_LP_PAGE_META = '{}';
 
 function pageRenderSettings(
   page: Pick<Page, 'max_width' | 'background_color' | 'frame_style'>
@@ -2627,31 +2627,6 @@ export interface HubConnectorScriptDescriptor {
 }
 
 /**
- * Read the per-LP override at `pages.meta.hub_connector.enabled`.
- * Missing meta / missing key → defaults to `true` (no opt-out).
- * Broken meta JSON falls back to the default so a parse failure
- * never blocks the connector script from rendering on other LPs.
- */
-export function readLpHubConnectorEnabled(
-  metaRaw: string | null | undefined
-): boolean {
-  if (!metaRaw) return true;
-  try {
-    const parsed: unknown = JSON.parse(metaRaw);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const hub = (parsed as Record<string, unknown>).hub_connector;
-      if (hub && typeof hub === 'object' && !Array.isArray(hub)) {
-        const enabled = (hub as Record<string, unknown>).enabled;
-        if (typeof enabled === 'boolean') return enabled;
-      }
-    }
-  } catch {
-    // fall through to default true
-  }
-  return true;
-}
-
-/**
  * Decide whether the public renderer should emit the connector
  * `<script>` tag for this LP/version/publication, and if so, return
  * the descriptor needed to render it. Returns null when *any* of the
@@ -2661,8 +2636,6 @@ export function readLpHubConnectorEnabled(
  *   - workspace's hub_connector row exists, is enabled, status='active'
  *   - script_url is a valid https URL
  *   - meta.script_enabled is true
- *   - the LP-level override (`pages.meta.hub_connector.enabled`) is
- *     not false
  *   - lp / version / publication ids are all present
  *   - publicUrl is known
  */
@@ -2672,16 +2645,8 @@ export function resolveHubConnectorScript(params: {
   versionId: string | null | undefined;
   publicationId: string | null | undefined;
   publicUrl: string | null | undefined;
-  lpHubConnectorEnabled: boolean;
 }): HubConnectorScriptDescriptor | null {
-  const {
-    resolved,
-    lpId,
-    versionId,
-    publicationId,
-    publicUrl,
-    lpHubConnectorEnabled,
-  } = params;
+  const { resolved, lpId, versionId, publicationId, publicUrl } = params;
   if (!resolved) return null;
   if (!resolved.enabled) return null;
   if (resolved.status !== 'active') return null;
@@ -2690,7 +2655,6 @@ export function resolveHubConnectorScript(params: {
   if (!resolved.connectionId) return null;
   if (!lpId || !versionId || !publicationId) return null;
   if (!publicUrl) return null;
-  if (!lpHubConnectorEnabled) return null;
   return {
     scriptUrl: resolved.scriptUrl,
     connectionId: resolved.connectionId,

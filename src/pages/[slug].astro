@@ -23,7 +23,6 @@ import {
   isLiveNow,
   isPublicationEnded,
   hubConnectorQueries,
-  readLpHubConnectorEnabled,
   resolveHubConnectorScript,
 } from '../lib/db';
 import { parseContent } from '../lib/content';
@@ -227,23 +226,20 @@ const layout = computePromotionsLayout(promotionsForLayout);
 const scarcity = content.promotions?.scarcity;
 const floatingCta = content.promotions?.floatingCta;
 
-// Hub Connector hook. Off by default — only fires when the workspace
-// has an `active`, enabled hub_connector row AND the LP-level override
-// hasn't opted this LP out. `resolveHubConnectorScript` enforces every
-// safety rule (https script URL, all IDs present, etc.) so a missing
-// or broken connector row simply returns null and the LP renders as
-// it always has.
+// Hub Connector hook. It only fires when the workspace has an
+// `active`, enabled hub_connector row. `resolveHubConnectorScript`
+// enforces every safety rule (https script URL, all IDs present, etc.)
+// so a missing or broken connector row simply returns null and the LP
+// renders as it always has.
 const hubConnector = db
   ? await hubConnectorQueries.get(db, parent.workspace_id)
   : null;
-const lpHubConnectorEnabled = readLpHubConnectorEnabled(parent.meta);
 const hubConnectorScript = resolveHubConnectorScript({
   resolved: hubConnector,
   lpId: parent.id,
   versionId: parent.published_version_id_resolved,
   publicationId: parent.latest_publication_id,
   publicUrl,
-  lpHubConnectorEnabled,
 });
 
 // The data-ilpb-* identifiers on the LP root are only meaningful

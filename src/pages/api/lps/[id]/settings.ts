@@ -18,7 +18,6 @@ import {
   SLUG_MIN_LENGTH,
   SLUG_PATTERN,
 } from '../../../../lib/slugs';
-import { readLpHubConnectorEnabled } from '../../../../lib/db';
 
 export const prerender = false;
 
@@ -59,7 +58,6 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     password,
     backgroundColor,
     frameStyle,
-    hubConnectorEnabled,
   } = body as {
     title?: unknown;
     slug?: unknown;
@@ -70,7 +68,6 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     password?: unknown;
     backgroundColor?: unknown;
     frameStyle?: unknown;
-    hubConnectorEnabled?: unknown;
   };
 
   const patch: {
@@ -280,16 +277,6 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     }
   }
 
-  let hubConnectorEnabledBool: boolean | undefined = undefined;
-  if (hubConnectorEnabled !== undefined) {
-    if (typeof hubConnectorEnabled !== 'boolean') {
-      return errors.validationError('hubConnectorEnabled は boolean で指定してください', {
-        field: 'hubConnectorEnabled',
-      });
-    }
-    hubConnectorEnabledBool = hubConnectorEnabled;
-  }
-
   try {
     const touchesRenderSettings =
       maxWidth !== undefined ||
@@ -298,8 +285,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     const needsExistingPage =
       touchesRenderSettings ||
       publishAt !== undefined ||
-      unpublishAt !== undefined ||
-      hubConnectorEnabledBool !== undefined;
+      unpublishAt !== undefined;
     const existing = needsExistingPage
       ? await pageQueries.findById(env.DB, workspaceId, id)
       : null;
@@ -328,27 +314,6 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
           { field: 'publishAt' }
         );
       }
-    }
-
-    if (hubConnectorEnabledBool !== undefined) {
-      if (!existing) return errors.notFound(`LP \`${id}\` not found`);
-      let meta: Record<string, unknown> = {};
-      try {
-        const parsed: unknown = JSON.parse(existing.meta ?? '{}');
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          meta = parsed as Record<string, unknown>;
-        }
-      } catch {
-        /* ignore broken meta */
-      }
-      const hub =
-        typeof meta.hub_connector === 'object' && meta.hub_connector !== null
-          ? { ...(meta.hub_connector as Record<string, unknown>) }
-          : {};
-      patch.metaJson = JSON.stringify({
-        ...meta,
-        hub_connector: { ...hub, enabled: hubConnectorEnabledBool },
-      });
     }
 
     if (patch.slug) {
@@ -380,10 +345,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       patch
     );
     if (!updated) return errors.notFound(`LP \`${id}\` not found`);
-    return success({
-      ...updated,
-      lpHubConnectorEnabled: readLpHubConnectorEnabled(updated.meta),
-    });
+    return success(updated);
   } catch (err) {
     console.error(`PATCH /api/lps/${id}/settings failed:`, err);
     return errors.internalError('Failed to update settings');

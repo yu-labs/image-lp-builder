@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { confirmAdminAction } from '../../lib/admin-dialog';
-import { showAdminToast } from '../../lib/admin-toast';
+import { showAdminToast, type AdminToastTone } from '../../lib/admin-toast';
 import { notifySiteSettingsStatusChanged } from '../../lib/site-settings-events';
 import CollapseToggleIcon from './CollapseToggleIcon';
 import {
@@ -25,6 +25,7 @@ interface HubConnectorData {
   connectionId: string | null;
   status: string | null;
   serverTokenConfigured: boolean;
+  snapshotPushTokenConfigured: boolean;
   connectedAt: string | null;
   lastVerifiedAt: string | null;
 }
@@ -37,6 +38,23 @@ interface UrlForm {
 
 type ApiErr = { success: false; error: { code: string; message: string } };
 type AdminTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
+type SyncStatus = 'synced' | 'failed';
+
+interface SyncResultItem {
+  lpId: string;
+  title: string | null;
+  slug: string;
+  status: SyncStatus;
+  reason?: string;
+  httpStatus?: number;
+}
+
+interface SyncPublishedResult {
+  total: number;
+  synced: number;
+  failed: number;
+  results: SyncResultItem[];
+}
 
 const EMPTY_FORM: UrlForm = { scriptUrl: '', hubBaseUrl: '', connectionId: '' };
 const STATUS_LABEL: Record<string, string> = {
@@ -83,6 +101,37 @@ function notifyError(prefix: string, err: unknown) {
   showAdminToast({ tone: 'danger', message: `${prefix}。${errorMessage(err)}` });
 }
 
+function getSyncDisabledReason(data: HubConnectorData | null): string | null {
+  if (!data?.connectionId || !data.hubBaseUrl) {
+    return '接続コードを入力すると同期できます。';
+  }
+  if (!data.enabled) return '連携コネクターをONにしてください。';
+  if (data.status !== 'active') return '連携コネクターの接続を確認してください。';
+  if (!data.snapshotPushTokenConfigured) {
+    return '同期用トークンが未設定です。接続コードで再接続してください。';
+  }
+  if (!data.scriptEnabled) return 'スクリプト出力をONにしてください。';
+  return null;
+}
+
+function getResultToastTone(result: SyncPublishedResult): AdminToastTone {
+  if (result.failed > 0) return 'danger';
+  if (result.total === 0) return 'info';
+  return 'success';
+}
+
+function resultSummary(result: SyncPublishedResult): string {
+  if (result.total === 0) return '同期対象の公開LPはありません。';
+  const parts = [`${result.synced}件同期`];
+  if (result.failed > 0) parts.push(`${result.failed}件失敗`);
+  return parts.join(' / ');
+}
+
+function resultStatusLabel(status: SyncStatus): string {
+  if (status === 'synced') return '同期済み';
+  return '失敗';
+}
+
 export default function HubConnectorPanel({
   defaultOpen = false,
   hideHeading = false,
@@ -101,6 +150,8 @@ export default function HubConnectorPanel({
   const [connectCode, setConnectCode] = useState('');
   const [serverToken, setServerToken] = useState('');
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncPublishedResult | null>(null);
 
   useEffect(() => {
     void load();
@@ -155,6 +206,7 @@ export default function HubConnectorPanel({
       const json = (await res.json()) as { success: true; data: HubConnectorData };
       applyData(json.data);
       setConnectCode('');
+      setSyncResult(null);
       setSavedAt(Date.now());
       window.setTimeout(() => setSavedAt(null), 2000);
       notifySiteSettingsStatusChanged();
@@ -163,6 +215,37 @@ export default function HubConnectorPanel({
       notifyError('接続できませんでした', err);
     } finally {
       setConnecting(false);
+    }
+  }
+
+  async function syncPublishedLps() {
+    if (syncing) return;
+    const disabledReason = getSyncDisabledReason(data);
+    if (disabledReason) {
+      showAdminToast({ tone: 'info', message: disabledReason });
+      return;
+    }
+
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/hub-connector/sync-published', {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error(await readErr(res, '同期失敗'));
+      const json = (await res.json()) as {
+        success: true;
+        data: SyncPublishedResult;
+      };
+      setSyncResult(json.data);
+      showAdminToast({
+        tone: getResultToastTone(json.data),
+        message: resultSummary(json.data),
+      });
+    } catch (err) {
+      notifyError('公開LPを同期できませんでした', err);
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -260,6 +343,7 @@ export default function HubConnectorPanel({
   const panelClass = hideHeading
     ? 'space-y-4 bg-transparent p-0 shadow-none ring-0 sm:p-0'
     : 'space-y-5';
+  const syncDisabledReason = getSyncDisabledReason(data);
 
   return (
     <EditorPanel className={panelClass}>
@@ -355,6 +439,68 @@ export default function HubConnectorPanel({
               onChange={toggleScriptEnabled}
             />
           </div>
+
+          <AdminCallout
+            tone={syncDisabledReason ? 'neutral' : 'info'}
+            title="既存の公開LPを同期"
+          >
+            <div className="space-y-3">
+              <p>
+                公開中のLPをConnectorへ送ります。LP本文や公開状態は変更されません。
+              </p>
+              <AdminActionRow align="between">
+                {syncDisabledReason ? (
+                  <AdminStatusPill tone="warning">{syncDisabledReason}</AdminStatusPill>
+                ) : (
+                  <AdminStatusPill tone="success">同期できます</AdminStatusPill>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void syncPublishedLps()}
+                  disabled={syncing || Boolean(syncDisabledReason)}
+                  className={EDITOR_PRIMARY_BUTTON_CLASS}
+                >
+                  {syncing ? '同期中...' : '全公開LPをConnectorへ同期'}
+                </button>
+              </AdminActionRow>
+              {syncResult && (
+                <div className="rounded-xl border border-white/75 bg-white/82 p-3">
+                  <p className="text-xs font-extrabold text-[#3f4352]">
+                    {resultSummary(syncResult)}
+                  </p>
+                  {syncResult.results.length > 0 && (
+                    <div className="mt-2 max-h-44 space-y-1 overflow-auto pr-1">
+                      {syncResult.results.map((item) => (
+                        <div
+                          key={item.lpId}
+                          className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[#687082]"
+                        >
+                          <AdminStatusPill
+                            tone={
+                              item.status === 'synced'
+                                ? 'success'
+                                : 'danger'
+                            }
+                          >
+                            {resultStatusLabel(item.status)}
+                          </AdminStatusPill>
+                          <span className="min-w-0 truncate">
+                            {item.title || '無題'} /{item.slug}
+                          </span>
+                          {item.reason && (
+                            <span className="font-mono text-[#9aa1ae]">
+                              {item.reason}
+                              {item.httpStatus ? ` (${item.httpStatus})` : ''}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </AdminCallout>
 
           <button
             type="button"
