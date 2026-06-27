@@ -25,6 +25,7 @@ import { checkForUpdate, CURRENT_VERSION, type VersionCheck } from '../../lib/ve
 import { roleLabel } from '../../lib/labels';
 import { readLock, type UpdateLockState } from '../../lib/update-lock';
 import { installationQueries } from '../../lib/github-install';
+import { renderReleaseNotesMarkdown } from '../../lib/release-notes-markdown.js';
 
 export const prerender = false;
 
@@ -87,6 +88,9 @@ const bootstrap = {
   isInstalled,
   currentVersion: update.current,
 };
+const releaseNotesHtml = update.releaseBody
+  ? renderReleaseNotesMarkdown(update.releaseBody)
+  : null;
 ---
 
 <!doctype html>
@@ -201,10 +205,10 @@ const bootstrap = {
               ? 'セキュリティまたは重大な問題の修正が含まれます。可能な限り早めに適用してください。'
               : '新機能や改善が含まれます。任意のタイミングで適用してください。'}
           </p>
-          {update.releaseBody ? (
+          {releaseNotesHtml ? (
             <details class="release-notes">
               <summary>このアップデートの内容を見る</summary>
-              <div class="release-body">{update.releaseBody}</div>
+              <div class="release-body" set:html={releaseNotesHtml} />
             </details>
           ) : null}
 
@@ -926,10 +930,57 @@ const bootstrap = {
     border-top: 1px solid #f3f4f6;
     font-size: 0.875rem;
     line-height: 1.7;
-    /* pre-wrap preserves the line breaks the operator wrote in the
-       release body without forcing a monospace font. */
-    white-space: pre-wrap;
     color: #374151;
+  }
+
+  .release-body :global(h3),
+  .release-body :global(h4),
+  .release-body :global(h5) {
+    margin: 0.85rem 0 0.35rem;
+    color: #111827;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    font-weight: 800;
+  }
+
+  .release-body :global(h3:first-child),
+  .release-body :global(h4:first-child),
+  .release-body :global(h5:first-child) {
+    margin-top: 0.1rem;
+  }
+
+  .release-body :global(p) {
+    margin: 0.45rem 0;
+  }
+
+  .release-body :global(ul),
+  .release-body :global(ol) {
+    margin: 0.35rem 0 0.65rem;
+    padding-left: 1.2rem;
+  }
+
+  .release-body :global(li) {
+    margin: 0.18rem 0;
+  }
+
+  .release-body :global(code) {
+    border-radius: 0.25rem;
+    background: #f3f4f6;
+    padding: 0.08rem 0.25rem;
+    color: #1f2937;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.82em;
+  }
+
+  .release-body :global(a) {
+    color: #1e40af;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .release-body :global(a:hover) {
+    color: #1e3a8a;
   }
 
   .release-link-secondary {
