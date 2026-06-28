@@ -1,7 +1,7 @@
 {
   "name": "image-lp-builder",
   "type": "module",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Open-source image-based landing page builder for Cloudflare Workers",
   "license": "AGPL-3.0-or-later",
   "repository": {
@@ -36,6 +36,8 @@
     "deploy": "astro build && wrangler deploy",
     "prepare:public-release": "node scripts/prepare-public-release.mjs",
     "test:cta-url-input": "node scripts/cta-url-input-contract-audit.mjs",
+    "test:hub-connector-sync": "node scripts/hub-connector-sync-contract-audit.mjs",
+    "test:release-notes-markdown": "node scripts/release-notes-markdown-contract-audit.mjs",
     "test:domain-public-host": "node scripts/domain-public-host-contract-audit.mjs",
     "test:homepage-lp": "node scripts/homepage-lp-contract-audit.mjs",
     "test:section-duplicate": "node scripts/section-duplicate-contract-audit.mjs",

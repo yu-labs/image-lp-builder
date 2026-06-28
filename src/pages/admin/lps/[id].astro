@@ -25,14 +25,9 @@ import PublishPanel from '../../../components/admin/PublishPanel';
 import LpMetaPanel from '../../../components/admin/LpMetaPanel';
 import UtmLinksPanel from '../../../components/admin/UtmLinksPanel';
 import PromotionsPanel from '../../../components/admin/PromotionsPanel';
-import LpHubConnectorPanel from '../../../components/admin/LpHubConnectorPanel';
 import DistributionUrlCopy from '../../../components/admin/DistributionUrlCopy';
 import { env } from 'cloudflare:workers';
-import {
-  hasPagePendingChanges,
-  pageQueries,
-  readLpHubConnectorEnabled,
-} from '../../../lib/db';
+import { hasPagePendingChanges, pageQueries } from '../../../lib/db';
 import { parseContent } from '../../../lib/content';
 import { statusInfo } from '../../../lib/labels';
 
@@ -57,7 +52,6 @@ if (lp.status === 'trash') {
 
 const content = parseContent(lp.content);
 const statusBadge = statusInfo(lp.status);
-const lpHubConnectorEnabled = readLpHubConnectorEnabled(lp.meta);
 const displayTitle = lp.title?.trim() || lp.slug;
 const hasPendingChanges = hasPagePendingChanges(lp);
 const passwordProtected = !!lp.password_hash;
@@ -301,14 +295,6 @@ const createdDate = shortDate(lp.created_at);
 
             <div id="panel-utm" class="settings-panel">
               <UtmLinksPanel lpId={lp.id} slug={lp.slug} client:load />
-            </div>
-
-            <div class="settings-panel">
-              <LpHubConnectorPanel
-                lpId={lp.id}
-                initialEnabled={lpHubConnectorEnabled}
-                client:load
-              />
             </div>
 
             <div class="publish-return-row">

@@ -1,7 +1,4 @@
-import {
-  hubConnectorQueries,
-  readLpHubConnectorEnabled,
-} from './db';
+import { hubConnectorQueries } from './db';
 import { buildHubExportPayload } from './hub-export';
 
 export type HubConnectorSnapshotPushResult =
@@ -32,9 +29,6 @@ export async function pushHubConnectorSnapshot(params: {
     requestUrl: params.requestUrl,
   });
   if (!exported.ok) return { pushed: false, reason: 'export_unavailable' };
-  if (!readLpHubConnectorEnabled(String(exported.value.page.meta ?? ''))) {
-    return { pushed: false, reason: 'lp_disabled' };
-  }
 
   const endpoint = `${config.hubBaseUrl.replace(/\/+$/g, '')}/api/core/connections/${encodeURIComponent(
     config.connectionId
