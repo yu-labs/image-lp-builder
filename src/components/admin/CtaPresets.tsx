@@ -40,6 +40,9 @@ export interface CtaPreset {
   build: () => Omit<Cta, 'id'>;
 }
 
+/** Union of the preset ids (derived from CTA_PRESETS). */
+export type CtaPresetId = (typeof CTA_PRESETS)[number]['id'];
+
 /**
  * Presets are organized by *function* (what the button does), not by
  * color. Each preset already wires up an appropriate link type and
