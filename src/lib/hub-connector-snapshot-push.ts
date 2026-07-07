@@ -1,5 +1,6 @@
 import { hubConnectorQueries } from './db';
 import { buildHubExportPayload } from './hub-export';
+import { validateHubExportPayload } from './hub-export-contract';
 
 export type HubConnectorSnapshotPushResult =
   | { pushed: true; status: number }
@@ -29,6 +30,17 @@ export async function pushHubConnectorSnapshot(params: {
     requestUrl: params.requestUrl,
   });
   if (!exported.ok) return { pushed: false, reason: 'export_unavailable' };
+
+  // Catch payload-shape drift on the sender side before it reaches the
+  // receiving endpoint (same contract module runs on both sides).
+  const contract = validateHubExportPayload(exported.value);
+  if (!contract.ok) {
+    console.error(
+      'Hub connector snapshot push blocked by contract validation:',
+      contract.errors.join('; ')
+    );
+    return { pushed: false, reason: 'contract_invalid' };
+  }
 
   const endpoint = `${config.hubBaseUrl.replace(/\/+$/g, '')}/api/core/connections/${encodeURIComponent(
     config.connectionId
