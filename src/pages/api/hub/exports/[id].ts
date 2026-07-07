@@ -32,6 +32,7 @@ import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
 import { success, errors } from '../../../../lib/api';
 import { buildHubExportPayload } from '../../../../lib/hub-export';
+import { validateHubExportPayload } from '../../../../lib/hub-export-contract';
 import { requireHubConnectorAuth } from '../../../../lib/hub-connector-auth';
 
 export const prerender = false;
@@ -60,6 +61,17 @@ export const GET: APIRoute = async ({ params, request, locals, url }) => {
       requestUrl: url,
     });
     if (!exported.ok) return errors.notFound(exported.message);
+
+    // Same contract module runs on both sides of the integration; a
+    // failure here means the export builder drifted from the contract.
+    const contract = validateHubExportPayload(exported.value);
+    if (!contract.ok) {
+      console.error(
+        `GET /api/hub/exports/${id} contract validation failed:`,
+        contract.errors.join('; ')
+      );
+      return errors.internalError('Export payload failed contract validation');
+    }
 
     return success(exported.value);
   } catch (err) {
