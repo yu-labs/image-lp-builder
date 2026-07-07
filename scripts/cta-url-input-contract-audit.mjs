@@ -33,18 +33,21 @@ function assertFunctionDoesNotInclude(file, functionName, forbiddenSnippet) {
   }
 }
 
-const ctaEditor = 'src/components/admin/CtaEditor.tsx';
+// The URL-mode helpers moved out of CtaEditor.tsx into CtaLinkForm.tsx
+// when the link form was split into its own component; the guard
+// follows the code.
+const linkForm = 'src/components/admin/CtaLinkForm.tsx';
 
-assertIncludes(ctaEditor, 'function urlValueForInlineUrl(link: CtaLink): string');
-assertIncludes(ctaEditor, 'function urlValueForModeSwitch(link: CtaLink): string');
-assertIncludes(ctaEditor, 'return url;');
-assertIncludes(ctaEditor, "return isPlaceholderUrl(url) ? '' : url;");
+assertIncludes(linkForm, 'function urlValueForInlineUrl(link: CtaLink): string');
+assertIncludes(linkForm, 'function urlValueForModeSwitch(link: CtaLink): string');
+assertIncludes(linkForm, 'return url;');
+assertIncludes(linkForm, "return isPlaceholderUrl(url) ? '' : url;");
 assertIncludes(
-  ctaEditor,
+  linkForm,
   "onChange({ type: 'custom_url', url: urlValueForModeSwitch(link) });",
 );
 assertFunctionDoesNotInclude(
-  ctaEditor,
+  linkForm,
   'urlValueForInlineUrl',
   'isPlaceholderUrl(url)',
 );

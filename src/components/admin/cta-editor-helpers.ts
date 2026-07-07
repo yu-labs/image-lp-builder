@@ -12,6 +12,13 @@ import type { CtaPresetId } from './CtaPresets';
 export type CtaButtonMode = NonNullable<Cta['buttonMode']>;
 export type CtaTextPresetSelection = CtaPresetId;
 
+/** A "よく使うリンク" entry the CTA link form can point at. */
+export interface MyLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export interface SaveErrorGroup {
   ctaId: string;
   title: string;
