@@ -49,7 +49,11 @@ import {
   setStage,
 } from '../../../../lib/update-lock';
 import { getRelayUrl } from '../../../../lib/oauth-client';
-import { CURRENT_VERSION, REPO_SLUG } from '../../../../lib/version';
+import {
+  CURRENT_VERSION,
+  REPO_SLUG,
+  resolveUpdateSourceRepo,
+} from '../../../../lib/version';
 
 export const prerender = false;
 
@@ -181,9 +185,16 @@ export const POST: APIRoute = async ({ locals }) => {
     return errors.internalError('discover_repo_failed');
   }
 
+  // The update source is normally the project repository; a
+  // deployment can point elsewhere via UPDATE_SOURCE_REPO (see
+  // resolveUpdateSourceRepo). Repo discovery above intentionally keeps
+  // matching on the default name — the override changes where updates
+  // come from, not which repo this installation writes to.
+  const sourceRepo = resolveUpdateSourceRepo();
+
   let syncStatus: 'noop' | 'updated';
   try {
-    syncStatus = await syncFromUpstream(accessToken, customerRepo);
+    syncStatus = await syncFromUpstream(accessToken, customerRepo, sourceRepo);
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     console.error('git-database sync failed:', detail);
@@ -251,16 +262,17 @@ async function discoverInstalledRepo(accessToken: string): Promise<string> {
  */
 async function syncFromUpstream(
   accessToken: string,
-  customerRepo: string
+  customerRepo: string,
+  sourceRepo: string
 ): Promise<'noop' | 'updated'> {
   // Step a: upstream HEAD commit + tree SHA.
   const upstreamRef = await ghJson<{ object: { sha: string } }>(
-    `/repos/${REPO_SLUG}/git/ref/heads/${UPSTREAM_BRANCH}`,
+    `/repos/${sourceRepo}/git/ref/heads/${UPSTREAM_BRANCH}`,
     accessToken
   );
   const upstreamCommitSha = upstreamRef.object.sha;
   const upstreamCommit = await ghJson<{ tree: { sha: string } }>(
-    `/repos/${REPO_SLUG}/git/commits/${upstreamCommitSha}`,
+    `/repos/${sourceRepo}/git/commits/${upstreamCommitSha}`,
     accessToken
   );
   const upstreamTreeSha = upstreamCommit.tree.sha;
@@ -284,7 +296,11 @@ async function syncFromUpstream(
   // whole tree, regardless of file count. The zipball endpoint
   // returns a 302 to a presigned codeload.github.com URL; Workers
   // fetch follows redirects by default.
-  const files = await downloadAndExtract(accessToken, upstreamCommitSha);
+  const files = await downloadAndExtract(
+    accessToken,
+    sourceRepo,
+    upstreamCommitSha
+  );
 
   // Step c.5: preserve the customer's wrangler.jsonc bindings.
   //
@@ -373,7 +389,7 @@ async function syncFromUpstream(
     {
       method: 'POST',
       body: JSON.stringify({
-        message: `Self-update from ${REPO_SLUG}@${shortSha}`,
+        message: `Self-update from ${sourceRepo}@${shortSha}`,
         tree: newTree.sha,
         parents: [customerCommitSha],
       }),
@@ -402,10 +418,11 @@ async function syncFromUpstream(
  */
 async function downloadAndExtract(
   accessToken: string,
+  sourceRepo: string,
   commitSha: string
 ): Promise<ExtractedFile[]> {
   const res = await fetch(
-    `${GH_API}/repos/${REPO_SLUG}/zipball/${commitSha}`,
+    `${GH_API}/repos/${sourceRepo}/zipball/${commitSha}`,
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
