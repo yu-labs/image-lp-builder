@@ -1,7 +1,26 @@
+import { env } from 'cloudflare:workers';
 import packageJson from '../../package.json';
 
 export const CURRENT_VERSION: string = packageJson.version;
 export const REPO_SLUG = 'yu-labs/image-lp-builder';
+
+/**
+ * Repository this installation checks for releases and pulls updates
+ * from. Defaults to the project repository. A deployment can point at
+ * a different repository by setting the `UPDATE_SOURCE_REPO` variable
+ * to an `owner/name` slug — useful for forks that publish their own
+ * releases. Values that don't look like a repo slug fall back to the
+ * default.
+ */
+export function resolveUpdateSourceRepo(): string {
+  const override = (env as { UPDATE_SOURCE_REPO?: unknown } | undefined)
+    ?.UPDATE_SOURCE_REPO;
+  if (typeof override === 'string') {
+    const trimmed = override.trim();
+    if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(trimmed)) return trimmed;
+  }
+  return REPO_SLUG;
+}
 
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000; // 1 day
 
@@ -18,6 +37,7 @@ export type VersionFetchStatus = 'ok' | 'no_release' | 'network_error';
 
 interface CacheEntry {
   checkedAt: number;
+  repoSlug: string;
   latestVersion: string | null;
   releaseUrl: string | null;
   releaseName: string | null;
@@ -53,9 +73,14 @@ export interface VersionCheck {
  * fixes this way so the admin banner can switch to a louder style.
  */
 export async function checkForUpdate(): Promise<VersionCheck> {
+  const repoSlug = resolveUpdateSourceRepo();
   const fresh =
-    cache && Date.now() - cache.checkedAt < CHECK_INTERVAL_MS ? cache : null;
-  const data = fresh ?? (await fetchLatest());
+    cache &&
+    cache.repoSlug === repoSlug &&
+    Date.now() - cache.checkedAt < CHECK_INTERVAL_MS
+      ? cache
+      : null;
+  const data = fresh ?? (await fetchLatest(repoSlug));
 
   const hasUpdate =
     !!data.latestVersion &&
@@ -82,9 +107,10 @@ export function isCriticalRelease(name: string | null): boolean {
   return /\[critical\]/i.test(name);
 }
 
-async function fetchLatest(): Promise<CacheEntry> {
+async function fetchLatest(repoSlug: string): Promise<CacheEntry> {
   const empty = (status: VersionFetchStatus): CacheEntry => ({
     checkedAt: Date.now(),
+    repoSlug,
     latestVersion: null,
     releaseUrl: null,
     releaseName: null,
@@ -94,7 +120,7 @@ async function fetchLatest(): Promise<CacheEntry> {
 
   try {
     const res = await fetch(
-      `https://api.github.com/repos/${REPO_SLUG}/releases/latest`,
+      `https://api.github.com/repos/${repoSlug}/releases/latest`,
       {
         headers: {
           'User-Agent': `image-lp-builder/${CURRENT_VERSION}`,
@@ -122,6 +148,7 @@ async function fetchLatest(): Promise<CacheEntry> {
     const rawBody = typeof json.body === 'string' ? json.body.trim() : '';
     const next: CacheEntry = {
       checkedAt: Date.now(),
+      repoSlug,
       latestVersion: tag,
       releaseUrl: url,
       releaseName: name,
