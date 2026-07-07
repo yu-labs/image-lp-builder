@@ -99,8 +99,8 @@ function isSafeRedirect(target: string): boolean {
       </form>
 
       <p class="login-note">
-        初回は最初にログインしたGoogleアカウントが<br />
-        オーナーになります。以後は登録済み管理者のみです。
+        初回は最初にログインしたGoogleアカウントがオーナーになります。<br />
+        以後は登録済み管理者のみです。
       </p>
     </div>
   </main>
@@ -118,10 +118,15 @@ function isSafeRedirect(target: string): boolean {
 
   .login-shell {
     min-height: 100vh;
+    /* dvh tracks the visible viewport as mobile browser chrome shows/
+       hides, so the card stays centred instead of jumping under the
+       address bar on iOS Safari. vh above is the fallback. */
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
 
   .login-card {
