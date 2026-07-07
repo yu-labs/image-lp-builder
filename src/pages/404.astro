@@ -37,6 +37,9 @@ export const prerender = false;
 
   .not-found {
     min-height: 100vh;
+    /* dvh keeps the content centred under mobile browser chrome; vh is
+       the fallback. */
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;

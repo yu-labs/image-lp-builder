@@ -29,6 +29,9 @@ Astro.response.headers.set('Content-Type', 'text/html; charset=utf-8');
   body {
     margin: 0;
     min-height: 100vh;
+    /* dvh keeps the message centred under mobile browser chrome; vh is
+       the fallback. */
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
